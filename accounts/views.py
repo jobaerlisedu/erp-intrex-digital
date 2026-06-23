@@ -1,0 +1,190 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User, Group
+from django.contrib import messages
+from .decorators import staff_required, superuser_required, module_access, ERP_MODULES
+from .models import log_action, get_client_ip, AuditLog
+
+
+# ─────────────────────────────────────────────
+# User List
+# ─────────────────────────────────────────────
+@staff_required
+def user_list(request):
+    users = User.objects.prefetch_related('groups').order_by('-date_joined')
+
+    # Annotate each user with their accessible module names
+    user_data = []
+    for user in users:
+        group_names = {g.name for g in user.groups.all()}
+        accessible = [
+            m for m in ERP_MODULES
+            if user.is_superuser or user.is_staff or f'{m[0]}_access' in group_names
+        ]
+        user_data.append({'user': user, 'modules': accessible})
+
+    return render(request, 'accounts/users.html', {
+        'user_data': user_data,
+        'all_modules': ERP_MODULES,
+    })
+
+
+# ─────────────────────────────────────────────
+# Create User
+# ─────────────────────────────────────────────
+@staff_required
+def user_create(request):
+    if request.method == 'POST':
+        username   = request.POST.get('username', '').strip()
+        password   = request.POST.get('password', '').strip()
+        email      = request.POST.get('email', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name  = request.POST.get('last_name', '').strip()
+        is_staff   = request.POST.get('is_staff') == 'on'
+        selected_modules = request.POST.getlist('modules')
+
+        # Validation
+        if not username or not password:
+            messages.error(request, 'Username and password are required.')
+            return render(request, 'accounts/user_form.html', {
+                'all_modules': ERP_MODULES, 'action': 'Create',
+                'form_data': request.POST,
+            })
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, f'Username "{username}" is already taken.')
+            return render(request, 'accounts/user_form.html', {
+                'all_modules': ERP_MODULES, 'action': 'Create',
+                'form_data': request.POST,
+            })
+
+        # Create the user
+        user = User.objects.create_user(
+            username=username, password=password,
+            email=email, first_name=first_name,
+            last_name=last_name, is_staff=is_staff,
+        )
+
+        # Assign module groups
+        for module_name in selected_modules:
+            if module_name in [m[0] for m in ERP_MODULES]:
+                group, _ = Group.objects.get_or_create(name=f'{module_name}_access')
+                user.groups.add(group)
+
+        log_action(
+            user=request.user,
+            action='USER_CREATE',
+            module='accounts',
+            description=f"Created user '{username}' with staff={is_staff} and modules={selected_modules}",
+            ip_address=get_client_ip(request)
+        )
+
+        messages.success(request, f'✅ User "{username}" created successfully.')
+        return redirect('accounts:user_list')
+
+    return render(request, 'accounts/user_form.html', {
+        'all_modules': ERP_MODULES,
+        'action': 'Create',
+        'form_data': {'username': '', 'first_name': '', 'last_name': '', 'email': ''},
+    })
+
+
+# ─────────────────────────────────────────────
+# Edit User
+# ─────────────────────────────────────────────
+@staff_required
+def user_edit(request, user_id):
+    edit_user = get_object_or_404(User, id=user_id)
+    user_module_names = {
+        g.name[:-7] for g in edit_user.groups.all() if g.name.endswith('_access')
+    }
+
+    if request.method == 'POST':
+        edit_user.email      = request.POST.get('email', '').strip()
+        edit_user.first_name = request.POST.get('first_name', '').strip()
+        edit_user.last_name  = request.POST.get('last_name', '').strip()
+
+        # Only allow changing is_staff if the current user is a superuser
+        if request.user.is_superuser:
+            edit_user.is_staff = request.POST.get('is_staff') == 'on'
+
+        # Change password only if provided
+        new_password = request.POST.get('password', '').strip()
+        if new_password:
+            edit_user.set_password(new_password)
+
+        edit_user.save()
+
+        # Reset module groups (don't touch other groups, if any)
+        module_groups = Group.objects.filter(name__endswith='_access')
+        edit_user.groups.remove(*module_groups)
+
+        for module_name in request.POST.getlist('modules'):
+            if module_name in [m[0] for m in ERP_MODULES]:
+                group, _ = Group.objects.get_or_create(name=f'{module_name}_access')
+                edit_user.groups.add(group)
+
+        log_action(
+            user=request.user,
+            action='USER_EDIT',
+            module='accounts',
+            description=f"Edited user '{edit_user.username}' (staff={edit_user.is_staff}, modules={request.POST.getlist('modules')})",
+            ip_address=get_client_ip(request)
+        )
+
+        messages.success(request, f'✅ User "{edit_user.username}" updated successfully.')
+        return redirect('accounts:user_list')
+
+    return render(request, 'accounts/user_form.html', {
+        'all_modules': ERP_MODULES,
+        'action': 'Edit',
+        'edit_user': edit_user,
+        'user_module_names': user_module_names,
+        'form_data': {
+            'first_name': edit_user.first_name,
+            'last_name':  edit_user.last_name,
+            'email':      edit_user.email,
+        },
+    })
+
+
+# ─────────────────────────────────────────────
+# Toggle Active / Deactivate
+# ─────────────────────────────────────────────
+@staff_required
+def user_toggle_active(request, user_id):
+    target_user = get_object_or_404(User, id=user_id)
+
+    if target_user == request.user:
+        messages.error(request, 'You cannot deactivate your own account.')
+        return redirect('accounts:user_list')
+
+    if target_user.is_superuser and not request.user.is_superuser:
+        messages.error(request, 'Only a superuser can deactivate another superuser.')
+        return redirect('accounts:user_list')
+
+    target_user.is_active = not target_user.is_active
+    target_user.save()
+    verb = 'activated' if target_user.is_active else 'deactivated'
+
+    log_action(
+        user=request.user,
+        action='USER_TOGGLE_ACTIVE',
+        module='accounts',
+        description=f"{verb.capitalize()} user '{target_user.username}' (active={target_user.is_active})",
+        ip_address=get_client_ip(request)
+    )
+
+    messages.success(request, f'User "{target_user.username}" has been {verb}.')
+    return redirect('accounts:user_list')
+
+
+# ─────────────────────────────────────────────
+# Audit Logs
+# ─────────────────────────────────────────────
+@module_access('audit_logs')
+def audit_logs(request):
+    logs = AuditLog.objects.select_related('user').all().order_by('-timestamp')
+    return render(request, 'accounts/audit_logs.html', {
+        'logs': logs,
+    })
+

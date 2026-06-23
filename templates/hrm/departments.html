@@ -1,0 +1,728 @@
+{% extends 'erp_base.html' %}
+{% block title %}Department Management - Intrex ERP
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabs-container {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--sidebar-border);
+        padding-bottom: 8px;
+        align-items: center;
+    }
+    .tab-btn {
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+    .tab-btn:hover {
+        color: var(--accent-color);
+    }
+    .tab-btn.active {
+        background-color: var(--accent-color);
+        color: #ffffff !important;
+    }
+    .asterisk {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+    .department-stage {
+        display: none;
+    }
+    .department-stage.active {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 24px;
+        align-items: start;
+    }
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    .pagination-pages {
+        display: flex;
+        gap: 4px;
+    }
+    .page-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--sidebar-border);
+        background-color: #ffffff;
+        color: var(--text-primary);
+        cursor: pointer;
+        border-radius: 4px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .page-btn:hover {
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    .page-btn.active {
+        background-color: var(--accent-color);
+        color: #ffffff;
+        border-color: var(--accent-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs Navigation -->
+<div class="tabs-container">
+    <button class="tab-btn active" id="btn-dept" onclick="switchTab('dept')">
+        <i class="fa-solid fa-building"></i> Department
+    </button>
+    <button class="tab-btn" id="btn-subdept" onclick="switchTab('subdept')">
+        <i class="fa-solid fa-sitemap"></i> Sub Department
+    </button>
+    <button class="tab-btn" id="btn-position" onclick="switchTab('position')">
+        <i class="fa-solid fa-id-card"></i> Position
+    </button>
+</div>
+
+<!-- ============================================== -->
+<!-- STAGE 1: DEPARTMENT                            -->
+<!-- ============================================== -->
+<div id="stage-dept" class="department-stage active">
+    <!-- Left Column: Add Department -->
+    <div class="glass-card" style="margin-bottom: 0;">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Add Department
+        </h3>
+        <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 16px 0 24px 0;">
+        
+        <form method="POST" action="{% url 'hrm:department' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_department">
+            
+            <div class="form-group">
+                <label>Department Name <span class="asterisk">*</span></label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Human Resources" required>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Status <span class="asterisk">*</span></label>
+                <select name="status" class="form-control" required>
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Additional Notes</label>
+                <textarea name="notes" class="form-control" placeholder="Details about this department..." style="height: 100px; resize: none; font-family: inherit;"></textarea>
+            </div>
+            
+            <button type="submit" class="btn-submit" style="width: 100%; margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 1rem;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Save Department
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Department Directory -->
+    <div class="glass-card" style="margin-bottom: 0; min-height: 520px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.15rem;">
+                <i class="fa-solid fa-building" style="color: var(--accent-color);"></i> Department Directory
+            </h3>
+            
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="search-dept" onkeyup="filterDepts()" class="form-control" placeholder="Search name..." style="width: 180px; padding: 8px 12px;">
+                <select id="filter-dept-status" onchange="filterDepts()" class="form-control" style="width: 130px; padding: 8px 12px;">
+                    <option value="all">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <button onclick="window.location.reload();" class="btn-submit" style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+        <table class="data-table" style="margin-top: 24px;">
+            <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
+                    <th style="font-weight: 600; color: var(--text-primary);">Department Name</th>
+                    <th style="font-weight: 600; color: var(--text-primary); width: 150px;">Status</th>
+                    <th style="font-weight: 600; color: var(--text-primary); width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="dept-tbody">
+                {% for d in departments %}
+                <tr class="dept-row" data-name="{{ d.name }}" data-status="{{ d.status }}">
+                    <td>
+                        <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ d.name }}</strong>
+                        {% if d.notes %}
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ d.notes }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if d.status == 'Active' %}success{% else %}danger{% endif %}">
+                            {{ d.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ d|json_script:d.id }}
+            <div class="action-group">
+                <button type="button" class="btn-action edit" onclick="editRecord('{{ d.id }}')"><i class="fa-solid fa-pen-to-square"></i></button>
+                <form method="POST" action="{% url 'hrm:department' %}" style="margin: 0;" onsubmit="return confirm('Delete this department?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_department">
+                            <input type="hidden" name="doc_id" value="{{ d.id }}">
+                            <button type="submit" class="btn-action delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+            </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 48px; color: var(--text-secondary); font-size: 0.95rem;">
+                        No departments found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+
+</div>
+
+<!-- ============================================== -->
+<!-- STAGE 2: SUB DEPARTMENT                        -->
+<!-- ============================================== -->
+<div id="stage-subdept" class="department-stage">
+    <!-- Left Column: Add Sub Department -->
+    <div class="glass-card" style="margin-bottom: 0;">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Add Sub Department
+        </h3>
+        <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 16px 0 24px 0;">
+        
+        <form method="POST" action="{% url 'hrm:department' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_sub_department">
+            
+            <div class="form-group">
+                <label>Sub Department Name <span class="asterisk">*</span></label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Recruitment" required>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Parent Department <span class="asterisk">*</span></label>
+                <select name="parent_id" class="form-control" required>
+                    <option value="" disabled selected>Select Parent...</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}">{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Status <span class="asterisk">*</span></label>
+                <select name="status" class="form-control" required>
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Additional Notes</label>
+                <textarea name="notes" class="form-control" placeholder="Details..." style="height: 100px; resize: none; font-family: inherit;"></textarea>
+            </div>
+            
+            <button type="submit" class="btn-submit" style="width: 100%; margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 1rem;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Save Sub Department
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Sub Department Directory -->
+    <div class="glass-card" style="margin-bottom: 0; min-height: 520px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.15rem;">
+                <i class="fa-solid fa-sitemap" style="color: var(--accent-color);"></i> Sub Department Directory
+            </h3>
+            
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="search-subdept" onkeyup="filterSubDepts()" class="form-control" placeholder="Search..." style="width: 180px; padding: 8px 12px;">
+                <select id="filter-subdept-status" onchange="filterSubDepts()" class="form-control" style="width: 130px; padding: 8px 12px;">
+                    <option value="all">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <button onclick="window.location.reload();" class="btn-submit" style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+        <table class="data-table" style="margin-top: 24px;">
+            <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
+                    <th style="font-weight: 600; color: var(--text-primary);">Sub Dept Name</th>
+                    <th style="font-weight: 600; color: var(--text-primary);">Parent Department</th>
+                    <th style="font-weight: 600; color: var(--text-primary); width: 120px;">Status</th>
+                    <th style="font-weight: 600; color: var(--text-primary); width: 100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="subdept-tbody">
+                {% for sd in sub_departments %}
+                <tr class="subdept-row" data-name="{{ sd.name }}" data-parent="{{ sd.parent_name }}" data-status="{{ sd.status }}">
+                    <td><strong style="color: var(--text-primary);">{{ sd.name }}</strong></td>
+                    <td>
+                        <span class="badge" style="background-color: #f1f5f9; color: var(--text-primary); border: 1px solid var(--sidebar-border); padding: 4px 8px;">
+                            {{ sd.parent_name }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if sd.status == 'Active' %}success{% else %}danger{% endif %}">
+                            {{ sd.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ sd|json_script:sd.id }}
+            <div class="action-group">
+                <button type="button" class="btn-action edit" onclick="editRecord('{{ sd.id }}')"><i class="fa-solid fa-pen-to-square"></i></button>
+                <form method="POST" action="{% url 'hrm:department' %}" style="margin: 0;" onsubmit="return confirm('Delete this sub department?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_sub_department">
+                            <input type="hidden" name="doc_id" value="{{ sd.id }}">
+                            <button type="submit" class="btn-action delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+            </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 48px; color: var(--text-secondary); font-size: 0.95rem;">
+                        No sub departments found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+
+</div>
+
+<!-- ============================================== -->
+<!-- STAGE 3: POSITION                              -->
+<!-- ============================================== -->
+<div id="stage-position" class="department-stage">
+    <!-- Left Column: Add Position -->
+    <div class="glass-card" style="margin-bottom: 0;">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Add Position
+        </h3>
+        <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 16px 0 24px 0;">
+        
+        <form method="POST" action="{% url 'hrm:department' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_position">
+            
+            <div class="form-group">
+                <label>Position Title <span class="asterisk">*</span></label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Software Engineer" required>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Department <span class="asterisk">*</span></label>
+                <select name="dept_id" id="pos-dept-select" onchange="filterSubDeptDropdown()" class="form-control" required>
+                    <option value="" disabled selected>Select Department...</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}">{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Sub Department <span class="asterisk">*</span></label>
+                <select name="sub_dept_id" id="pos-sub-dept-select" class="form-control" required>
+                    <option value="" disabled selected>Select Sub Department...</option>
+                    {% for sd in sub_departments %}
+                    <option value="{{ sd.id }}" data-parent-id="{{ sd.parent_id }}">{{ sd.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Status <span class="asterisk">*</span></label>
+                <select name="status" class="form-control" required>
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-submit" style="width: 100%; margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 1rem;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Save Position
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Position Directory -->
+    <div class="glass-card" style="margin-bottom: 0; min-height: 520px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.15rem;">
+                    <i class="fa-solid fa-id-card" style="color: var(--accent-color);"></i> Position Directory
+                </h3>
+                
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="search-position" onkeyup="searchPositions()" class="form-control" placeholder="Search..." style="width: 180px; padding: 8px 12px;">
+                    <select id="filter-position-status" onchange="searchPositions()" class="form-control" style="width: 130px; padding: 8px 12px;">
+                        <option value="all">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                    <button onclick="window.location.reload();" class="btn-submit" style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-arrow-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        <table class="data-table" style="margin-top: 24px;">
+                <thead>
+                    <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
+                        <th style="font-weight: 600; color: var(--text-primary);">Title</th>
+                        <th style="font-weight: 600; color: var(--text-primary);">Department</th>
+                        <th style="font-weight: 600; color: var(--text-primary);">Sub Dept</th>
+                        <th style="font-weight: 600; color: var(--text-primary); width: 120px;">Status</th>
+                        <th style="font-weight: 600; color: var(--text-primary); width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="position-tbody">
+                    {% for p in positions %}
+                    <tr class="position-row" data-title="{{ p.title }}" data-dept="{{ p.dept_name }}" data-subdept="{{ p.sub_dept_name }}" data-status="{{ p.status }}">
+                        <td><strong style="color: var(--text-primary);">{{ p.title }}</strong></td>
+                        <td>
+                            <span class="badge" style="background-color: #f8fafc; border: 1px solid var(--sidebar-border); color: var(--text-primary);">
+                                {{ p.dept_name }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background-color: #f1f5f9; border: 1px solid var(--sidebar-border); color: var(--text-primary);">
+                                {{ p.sub_dept_name }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if p.status == 'Active' %}success{% else %}danger{% endif %}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {{ p|json_script:p.id }}
+            <div class="action-group">
+                <button type="button" class="btn-action edit" onclick="editRecord('{{ p.id }}')"><i class="fa-solid fa-pen-to-square"></i></button>
+                <form method="POST" action="{% url 'hrm:department' %}" style="margin: 0;" onsubmit="return confirm('Delete this position?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_position">
+                                <input type="hidden" name="doc_id" value="{{ p.id }}">
+                                <button type="submit" class="btn-action delete">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 48px; color: var(--text-secondary); font-size: 0.95rem;">
+                            No positions found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination UI -->
+        <div class="pagination-container" id="position-pagination">
+            <div id="pagination-info">Showing 1 to 10 of {{ positions|length }} entries</div>
+            <div class="pagination-pages" id="pagination-buttons">
+                <!-- Buttons will be generated by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab switching and persistence
+    function switchTab(tabId) {
+        localStorage.setItem('departments_active_tab', tabId);
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeBtn = document.getElementById('btn-' + tabId);
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        document.querySelectorAll('.department-stage').forEach(stage => {
+            stage.classList.remove('active');
+        });
+        const activeStage = document.getElementById('stage-' + tabId);
+        if (activeStage) activeStage.classList.add('active');
+        
+        if (tabId === 'position') {
+            initPositionPagination();
+        }
+    }
+    
+    // Filters for Department Directory
+    function filterDepts() {
+        const query = document.getElementById('search-dept').value.toLowerCase();
+        const statusVal = document.getElementById('filter-dept-status').value;
+        const rows = document.querySelectorAll('.dept-row');
+        
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const status = row.getAttribute('data-status');
+            
+            const matchQuery = name.includes(query);
+            const matchStatus = (statusVal === 'all' || status === statusVal);
+            
+            if (matchQuery && matchStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Filters for Sub Department Directory
+    function filterSubDepts() {
+        const query = document.getElementById('search-subdept').value.toLowerCase();
+        const statusVal = document.getElementById('filter-subdept-status').value;
+        const rows = document.querySelectorAll('.subdept-row');
+        
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const parent = row.getAttribute('data-parent').toLowerCase();
+            const status = row.getAttribute('data-status');
+            
+            const matchQuery = name.includes(query) || parent.includes(query);
+            const matchStatus = (statusVal === 'all' || status === statusVal);
+            
+            if (matchQuery && matchStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Dynamic Filter for Sub Department selection dropdown in Position form
+    function filterSubDeptDropdown() {
+        const deptSelect = document.getElementById('pos-dept-select');
+        const subDeptSelect = document.getElementById('pos-sub-dept-select');
+        const selectedDeptId = deptSelect.value;
+        
+        for (let i = 0; i < subDeptSelect.options.length; i++) {
+            const opt = subDeptSelect.options[i];
+            if (opt.value === "") continue;
+            
+            const parentId = opt.getAttribute('data-parent-id');
+            if (parentId === selectedDeptId) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = 'none';
+            }
+        }
+        
+        const selectedOpt = subDeptSelect.options[subDeptSelect.selectedIndex];
+        if (selectedOpt && selectedOpt.value !== "" && selectedOpt.style.display === 'none') {
+            subDeptSelect.value = "";
+        }
+    }
+    
+    // Client-side Pagination & Search for Position Directory
+    let currentPosPage = 1;
+    const posRowsPerPage = 10;
+    let filteredPosRows = [];
+    
+    function searchPositions() {
+        const query = document.getElementById('search-position').value.toLowerCase();
+        const statusVal = document.getElementById('filter-position-status').value;
+        const rows = document.querySelectorAll('.position-row');
+        
+        filteredPosRows = [];
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title').toLowerCase();
+            const dept = row.getAttribute('data-dept').toLowerCase();
+            const subdept = row.getAttribute('data-subdept').toLowerCase();
+            const status = row.getAttribute('data-status');
+            
+            const matchQuery = title.includes(query) || dept.includes(query) || subdept.includes(query);
+            const matchStatus = (statusVal === 'all' || status === statusVal);
+            
+            if (matchQuery && matchStatus) {
+                filteredPosRows.push(row);
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        currentPosPage = 1;
+        renderPositionTable();
+    }
+    
+    function renderPositionTable() {
+        const totalRows = filteredPosRows.length;
+        const totalPages = Math.ceil(totalRows / posRowsPerPage) || 1;
+        
+        // Hide all rows first
+        const allRows = document.querySelectorAll('.position-row');
+        allRows.forEach(row => row.style.display = 'none');
+        
+        const startIndex = (currentPosPage - 1) * posRowsPerPage;
+        const endIndex = Math.min(startIndex + posRowsPerPage, totalRows);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            if (filteredPosRows[i]) {
+                filteredPosRows[i].style.display = '';
+            }
+        }
+        
+        // Update pagination info
+        const infoDiv = document.getElementById('pagination-info');
+        if (totalRows === 0) {
+            infoDiv.innerText = "Showing 0 to 0 of 0 entries";
+        } else {
+            infoDiv.innerText = `Showing ${startIndex + 1} to ${endIndex} of ${totalRows} entries`;
+        }
+        
+        // Generate buttons
+        const btnContainer = document.getElementById('pagination-buttons');
+        btnContainer.innerHTML = '';
+        
+        if (totalPages > 1) {
+            // Prev button
+            const prevBtn = document.createElement('button');
+            prevBtn.innerText = 'Prev';
+            prevBtn.className = 'page-btn';
+            prevBtn.disabled = currentPosPage === 1;
+            prevBtn.onclick = () => {
+                if (currentPosPage > 1) {
+                    currentPosPage--;
+                    renderPositionTable();
+                }
+            };
+            btnContainer.appendChild(prevBtn);
+            
+            // Numbered buttons
+            for (let i = 1; i <= totalPages; i++) {
+                const numBtn = document.createElement('button');
+                numBtn.innerText = i;
+                numBtn.className = 'page-btn' + (i === currentPosPage ? ' active' : '');
+                numBtn.onclick = () => {
+                    currentPosPage = i;
+                    renderPositionTable();
+                };
+                btnContainer.appendChild(numBtn);
+            }
+            
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.innerText = 'Next';
+            nextBtn.className = 'page-btn';
+            nextBtn.disabled = currentPosPage === totalPages;
+            nextBtn.onclick = () => {
+                if (currentPosPage < totalPages) {
+                    currentPosPage++;
+                    renderPositionTable();
+                }
+            };
+            btnContainer.appendChild(nextBtn);
+        }
+    }
+    
+    function initPositionPagination() {
+        const rows = document.querySelectorAll('.position-row');
+        filteredPosRows = Array.from(rows);
+        renderPositionTable();
+    }
+    
+    // On Page Load: restore active tab and run setup
+    function initPage() {
+        const activeTab = localStorage.getItem('departments_active_tab') || 'dept';
+        switchTab(activeTab);
+        filterSubDeptDropdown();
+    }
+    initPage();
+
+function editRecord(id) {
+    const data = JSON.parse(document.getElementById(id).textContent);
+    
+    // Check if there is an existing form with a submit button
+    
+    // Find the currently active tab/stage to get the right form
+    let form = null;
+    const activeStage = document.querySelector('.active') || document.body;
+    
+    // Look for form inside active stage first
+    if (activeStage.classList.contains('active')) {
+        form = activeStage.querySelector('form[method="POST"]');
+    }
+    
+    // Fallback if not found
+    if (!form) {
+        const stages = document.querySelectorAll('.active');
+        for (let s of stages) {
+            form = s.querySelector('form[method="POST"]');
+            if (form) break;
+        }
+    }
+    if (!form) form = document.querySelector('form[method="POST"]');
+    if (!form) return;
+
+    
+    // Create or update hidden doc_id input
+    let docInput = form.querySelector('input[name="doc_id"]');
+    if (!docInput) {
+        docInput = document.createElement('input');
+        docInput.type = 'hidden';
+        docInput.name = 'doc_id';
+        form.appendChild(docInput);
+    }
+    docInput.value = id;
+    
+    // Populate fields
+    for (const [key, value] of Object.entries(data)) {
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            field.value = value;
+            if (field.tagName === 'SELECT') {
+                field.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+    
+    // Update button text
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Record';
+        submitBtn.style.backgroundColor = '#f59e0b';
+    }
+    
+    // Scroll to form
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

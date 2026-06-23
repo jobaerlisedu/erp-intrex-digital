@@ -1,0 +1,125 @@
+{% extends "frontend.html" %}
+{% load static %}
+
+{% block content %}
+<main>
+
+        
+        <!-- ======= Page Title =======-->
+        <section class="section page-title text-center" style="background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-hover) 100%); color: var(--bs-white);">
+          <div class="container">
+            <span class="text-uppercase fw-semibold" style="color: var(--bs-secondary); letter-spacing: 1.5px; font-size: 0.85rem;">Company Info</span>
+            <h1 class="text-white fw-bold mt-2 mb-3">Our Background</h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb justify-content-center mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'frontend:index' %}" class="text-white opacity-75 text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item active text-white fw-semibold" aria-current="page">Background</li>
+              </ol>
+            </nav>
+          </div>
+        </section>
+        
+        <!-- ======= Content Section =======-->
+        <section class="section">
+          <div class="container">
+            <div class="row g-5">
+              
+              <!-- Left Column: Detailed Background Info -->
+              <div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+                <div class="content-wrapper">
+                  
+                  <!-- Who We Are -->
+                  <div class="mb-5">
+                    <span class="text-uppercase fw-bold text-primary small d-block mb-2" style="letter-spacing: 1px;">01. Who We Are</span>
+                    <h2 class="h3 fw-bold mb-3">Pioneers in Enterprise IT Infrastructure</h2>
+                    <p class="fs-5 lh-lg">Founded with the core goal of simplifying enterprise operations, Intrex Digital Hub is a full-service technology consulting agency and certification provider. We are comprised of certified network engineers, systems administrators, cloud consultants, and learning developers committed to helping organizations and individuals build robust technical backbones.</p>
+                  </div>
+                  
+                  <!-- What We Do -->
+                  <div class="mb-5">
+                    <span class="text-uppercase fw-bold text-primary small d-block mb-2" style="letter-spacing: 1px;">02. What We Do</span>
+                    <h2 class="h3 fw-bold mb-3">Integrated IT Services & Industry Training</h2>
+                    <p class="lh-lg mb-4">We deliver enterprise-level routing setups, secure VPN configurations, firewalls, and cloud migrations. At the same time, we operate ultra-fast NVMe SSD hostings, business workspace suites, and professional learning batch classrooms to bridge the technical workforce gap.</p>
+                    <p class="lh-lg">Our solutions reduce operational downtime, eliminate data vulnerabilities, and help companies shift capital IT spending to scalable pay-as-you-grow operational parameters.</p>
+                  </div>
+                  
+                  <div class="row g-4 mt-2">
+                    <!-- Vision -->
+                    <div class="col-md-6">
+                      <div class="p-4 rounded-4 shadow-sm border h-100 bg-body-tertiary">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                          <span class="text-primary fs-3"><i class="bi bi-eye"></i></span>
+                          <h3 class="h5 fw-bold mb-0">Our Vision</h3>
+                        </div>
+                        <p class="mb-0">To lead the digital infrastructure transformation, engineering secure, infinitely scalable, and resilient networks that enable global enterprises and technical professionals to build without boundaries.</p>
+                      </div>
+                    </div>
+                    
+                    <!-- Mission -->
+                    <div class="col-md-6">
+                      <div class="p-4 rounded-4 shadow-sm border h-100 bg-body-tertiary">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                          <span class="text-primary fs-3"><i class="bi bi-compass"></i></span>
+                          <h3 class="h5 fw-bold mb-0">Our Mission</h3>
+                        </div>
+                        <p class="mb-0">To deliver enterprise-grade IT integration and proactive 24/7 helpdesk SLA support while upskilling the tech community through hands-on, hardware-oriented professional training courses.</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <!-- Right Column: Sidebar Navigation and Inquiry Form -->
+              <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="sidebar d-flex flex-column gap-4">
+                  
+                  <!-- Solutions List -->
+                  <div class="p-4 rounded-4 shadow-sm bg-body-tertiary">
+                    <h4 class="h5 fw-bold mb-3 pb-2 border-bottom">Our Solutions</h4>
+                    <ul class="nav flex-column gap-2">
+                      <li class="nav-item"><a href="{% url 'frontend:service_network' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Network Solution</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_cloud' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Cloud Solution</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_hosting' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Domain & Hosting</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_managed_it' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">IT Managed Services</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_business_suite' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Business Suite</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:training' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Professional Training</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                    </ul>
+                  </div>
+                  
+                  <!-- Quick Inquiry -->
+                  <div class="p-4 rounded-4 shadow-sm bg-body-tertiary">
+                    <h4 class="h5 fw-bold mb-3 pb-2 border-bottom">Quick Inquiry</h4>
+                    <form id="contactForm">
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="name">Name</label>
+                        <input class="form-control" id="name" type="text" name="name" required="">
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="email">Email</label>
+                        <input class="form-control" id="email" type="email" name="email" required="">
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="subject">Inquiry Focus</label>
+                        <input class="form-control" id="subject" type="text" name="subject" value="Company Background" readonly>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="message">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required="" placeholder="Enter your queries about our operations, partnerships, or background..."></textarea>
+                      </div>
+                      <button class="btn btn-primary w-100 fw-semibold" type="submit">Submit Request</button>
+                    </form>
+                    <div class="mt-3 d-none alert alert-success" id="successMessage">Request sent successfully!</div>
+                    <div class="mt-3 d-none alert alert-danger" id="errorMessage">Request failed. Please try again.</div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </section>
+        
+      
+</main>
+{% endblock content %}

@@ -1,0 +1,72 @@
+{% extends 'erp_base.html' %}
+{% block title %}Investment Portfolio - Intrex{% endblock %}
+{% block content %}
+<div class="flex-between">
+    <h2>Investment Tracking</h2>
+</div>
+
+<div class="glass-card">
+    <h3>Add New Asset</h3>
+    <form method="POST" action="{% url 'investment:index' %}">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label>Asset Name</label>
+                <input type="text" name="asset_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Asset Class</label>
+                <select name="asset_class" class="form-control">
+                    <option value="Stock">Stock / Equity</option>
+                    <option value="Crypto">Cryptocurrency</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Bond">Bond / Fixed Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Invested Amount ($)</label>
+                <input type="number" step="0.01" name="invested_amount" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Current Value ($)</label>
+                <input type="number" step="0.01" name="current_value" class="form-control" required>
+            </div>
+        </div>
+        <button type="submit" class="btn-submit" style="margin-top: 10px;">Add to Portfolio</button>
+    </form>
+</div>
+
+<div class="glass-card">
+    <h3>Portfolio Assets</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Asset Name</th>
+                <th>Class</th>
+                <th>Invested Amount</th>
+                <th>Current Value</th>
+                <th>ROI</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for port in portfolios %}
+            <tr>
+                <td style="font-weight: 500; color: var(--text-primary);">{{ port.asset_name }}</td>
+                <td>{{ port.asset_class }}</td>
+                <td>${{ port.invested_amount }}</td>
+                <td>${{ port.current_value }}</td>
+                <td>
+                    <span class="badge {% if port.roi > 0 %}success{% elif port.roi < 0 %}danger{% else %}warning{% endif %}">
+                        {% if port.roi > 0 %}+{% endif %}{{ port.roi }}%
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary);">No assets in portfolio.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

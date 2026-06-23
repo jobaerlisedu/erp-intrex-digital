@@ -1,0 +1,358 @@
+{% extends 'erp_base.html' %}
+{% block title %}Payroll Management - Intrex ERP
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.lv-tabs { display:flex; gap:16px; margin-bottom:28px; border-bottom:1px solid var(--sidebar-border); padding-bottom:8px; }
+.lv-tab-btn { color:var(--text-secondary); font-weight:600; font-size:.9rem; display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:6px; border:none; background:transparent; cursor:pointer; transition:all .2s; }
+.lv-tab-btn:hover { color:var(--accent-color); }
+.lv-tab-btn.active { background-color:var(--accent-color); color:#fff !important; }
+.lv-panel { display:none; }
+.lv-panel.active { display:block; }
+
+.lv-layout { display:grid; grid-template-columns:320px 1fr; gap:24px; align-items:start; }
+.lv-form-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.lv-form-card h4 { margin:0 0 20px 0; font-size:.95rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--sidebar-border); }
+.lv-table-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.lv-table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--sidebar-border); }
+.lv-table-header h4 { margin:0; font-size:.95rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+.form-label-red { color:#ef4444; font-weight:600; font-size:.85rem; display:block; margin-bottom:6px; }
+.form-label-plain { color:var(--text-secondary); font-size:.85rem; display:block; margin-bottom:6px; }
+.lv-form-group { margin-bottom:16px; }
+.btn-lv-save { width:100%; padding:11px; background:var(--accent-color); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:.9rem; margin-top:8px; transition:opacity .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-lv-save:hover { opacity:.88; }
+.search-box { padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:.85rem; width:180px; }
+.btn-icon { width:32px; height:32px; background:var(--accent-color); border:none; border-radius:6px; cursor:pointer; color:#fff; display:inline-flex; align-items:center; justify-content:center; }
+.payslip-preview { background:#f8fafc; border:1px solid var(--sidebar-border); border-radius:12px; padding:60px 32px; text-align:center; color:var(--text-secondary); }
+.payslip-preview i { font-size:2.5rem; color:#cbd5e1; margin-bottom:16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="lv-tabs">
+  <button class="lv-tab-btn active" id="pr-btn-advance" onclick="switchPrTab('advance')">
+    <i class="fa-solid fa-money-bill-transfer"></i> Advance Salary
+  </button>
+  <button class="lv-tab-btn" id="pr-btn-generate" onclick="switchPrTab('generate')">
+    <i class="fa-solid fa-calculator"></i> Salary Generate
+  </button>
+  <button class="lv-tab-btn" id="pr-btn-payslip" onclick="switchPrTab('payslip')">
+    <i class="fa-solid fa-file-invoice-dollar"></i> Payslip
+  </button>
+</div>
+
+<!-- ===== TAB 1: Advance Salary ===== -->
+<div id="pr-panel-advance" class="lv-panel active">
+  <div class="lv-layout">
+    <div class="lv-form-card">
+      <h4><i class="fa-solid fa-plus" style="color:var(--accent-color);"></i> Add Advance Salary</h4>
+      <form method="POST" action="{% url 'hrm:payroll' %}">
+        {% csrf_token %}
+        <input type="hidden" name="pr_action" value="add_advance">
+        <div class="lv-form-group">
+          <label class="form-label-red">Employee <span>*</span></label>
+          <select name="employee" class="form-control" required>
+            <option value="" disabled selected>Select Employee...</option>
+            {% for emp in employees %}
+            <option value="{{ emp.name }}">{{ emp.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Amount <span>*</span></label>
+          <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Deduction Month <span>*</span></label>
+          <input type="month" name="deduct_month" class="form-control" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-plain">Reason</label>
+          <textarea name="reason" class="form-control" style="height:80px;resize:none;font-family:inherit;" placeholder="Reason..."></textarea>
+        </div>
+        <button type="submit" class="btn-lv-save">
+          <i class="fa-regular fa-floppy-disk"></i> Save Record
+        </button>
+      </form>
+    </div>
+
+    <div class="lv-table-card">
+      <div class="lv-table-header">
+        <h4><i class="fa-solid fa-list" style="color:var(--accent-color);"></i> Advance Salary Records</h4>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="adv-search" onkeyup="filterAdvances()" class="search-box" placeholder="Search...">
+          <button class="btn-icon" onclick="window.location.reload();"><i class="fa-solid fa-rotate-right" style="font-size:.75rem;"></i></button>
+        </div>
+      </div>
+        <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Amount</th>
+            <th>Deduct Month</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adv-tbody">
+          {% for adv in advances %}
+          <tr class="adv-row" data-name="{{ adv.employee }}">
+            <td><strong>{{ adv.employee }}</strong></td>
+            <td>${{ adv.amount|floatformat:2 }}</td>
+            <td>{{ adv.deduct_month }}</td>
+            <td>
+              <span class="badge {% if adv.status == 'Deducted' %}success{% else %}warning{% endif %}">
+                {{ adv.status }}
+              </span>
+            </td>
+            <td>
+              {% if adv.id %}
+              <form method="POST" action="{% url 'hrm:payroll' %}" style="margin:0;" onsubmit="return confirm('Delete this record?');">
+                {% csrf_token %}
+                <input type="hidden" name="pr_action" value="delete_advance">
+                <input type="hidden" name="doc_id" value="{{ adv.id }}">
+                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;"><i class="fa-solid fa-trash-can"></i></button>
+              </form>
+              {% else %}--{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-secondary);">No advance salary records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+
+<!-- ===== TAB 2: Salary Generate ===== -->
+<div id="pr-panel-generate" class="lv-panel">
+  <div class="lv-layout">
+    <div class="lv-form-card">
+      <h4><i class="fa-solid fa-gear" style="color:var(--accent-color);"></i> Generate Salary</h4>
+      <form method="POST" action="{% url 'hrm:payroll' %}">
+        {% csrf_token %}
+        <input type="hidden" name="pr_action" value="generate_salary">
+        <div class="lv-form-group">
+          <label class="form-label-red">Select Month <span>*</span></label>
+          <select name="month" class="form-control" required>
+            {% for m in months %}
+            <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Select Year <span>*</span></label>
+          <select name="year" class="form-control" required>
+            {% for y in years %}
+            <option value="{{ y }}" {% if y == years.1 %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-lv-save" style="margin-top:16px;">
+          <i class="fa-solid fa-file-invoice"></i> Generate Payroll
+        </button>
+      </form>
+    </div>
+
+    <div class="lv-table-card">
+      <div class="lv-table-header">
+        <h4><i class="fa-regular fa-clock" style="color:var(--accent-color);"></i> Saved Payroll Records</h4>
+        <div style="display:flex; gap:8px;">
+            <select class="form-control" style="width: auto; padding: 6px; font-size: 0.85rem;"><option>Month</option></select>
+            <select class="form-control" style="width: auto; padding: 6px; font-size: 0.85rem;"><option>Year</option></select>
+            <button class="btn-icon"><i class="fa-solid fa-magnifying-glass" style="font-size:.75rem;"></i></button>
+        </div>
+      </div>
+        <table class="data-table">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Employees</th>
+            <th>Total Net Pay</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pr in payrolls %}
+          <tr>
+            <td><strong>{{ pr.period }}</strong></td>
+            <td>{{ pr.employee_count }}</td>
+            <td>${{ pr.total_net_pay|floatformat:2 }}</td>
+            <td>
+              {% if pr.id %}
+              <form method="POST" action="{% url 'hrm:payroll' %}" style="margin:0;" onsubmit="return confirm('Delete this payroll record?');">
+                {% csrf_token %}
+                <input type="hidden" name="pr_action" value="delete_payroll">
+                <input type="hidden" name="doc_id" value="{{ pr.id }}">
+                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;"><i class="fa-solid fa-trash-can"></i></button>
+              </form>
+              {% else %}--{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-secondary);">Select period to load records.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+
+<!-- ===== TAB 3: Payslip ===== -->
+<div id="pr-panel-payslip" class="lv-panel">
+  <div class="lv-layout">
+    <div class="lv-form-card">
+      <h4><i class="fa-solid fa-magnifying-glass" style="color:var(--accent-color);"></i> Find Payslip</h4>
+      <form action="#" onsubmit="event.preventDefault(); showPayslip();">
+        <div class="lv-form-group">
+          <label class="form-label-red">Select Employee <span>*</span></label>
+          <select name="emp_name" class="form-control" required>
+            <option value="" disabled selected>Select Employee...</option>
+            {% for emp in employees %}
+            <option value="{{ emp.name }}">{{ emp.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Select Month <span>*</span></label>
+          <select name="month" class="form-control" required>
+            {% for m in months %}
+            <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Select Year <span>*</span></label>
+          <select name="year" class="form-control" required>
+            {% for y in years %}
+            <option value="{{ y }}" {% if y == years.1 %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-lv-save" style="margin-top:16px;">
+          <i class="fa-regular fa-file-lines"></i> View Payslip
+        </button>
+      </form>
+    </div>
+
+    <div class="lv-table-card">
+      <div class="lv-table-header">
+        <h4><i class="fa-solid fa-file-invoice" style="color:var(--accent-color);"></i> Payslip Preview</h4>
+        <button class="btn-icon" style="width: auto; padding: 0 16px; font-size: 0.85rem;" onclick="window.print()"><i class="fa-solid fa-print" style="margin-right: 6px;"></i> Print</button>
+      </div>
+      <div class="payslip-preview" id="payslip-preview-area">
+        <i class="fa-regular fa-file"></i>
+        <p>Select an employee and period to view their payslip.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchPrTab(tab) {
+  localStorage.setItem('pr_active_tab', tab);
+  document.querySelectorAll('.lv-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pr-btn-' + tab).classList.add('active');
+  document.querySelectorAll('.lv-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('pr-panel-' + tab).classList.add('active');
+}
+
+function filterAdvances() {
+  const q = document.getElementById('adv-search').value.toLowerCase();
+  document.querySelectorAll('.adv-row').forEach(row => {
+    const name = row.getAttribute('data-name').toLowerCase();
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+function showPayslip() {
+    // In a real application, this would fetch payslip data via AJAX and render it in the preview area
+    document.getElementById('payslip-preview-area').innerHTML = `
+        <div style="text-align: left; color: var(--text-primary);">
+            <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-color);">Payslip Generated</h3>
+            <p><strong>Employee:</strong> Selected Employee</p>
+            <p><strong>Period:</strong> Selected Month, Selected Year</p>
+            <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 20px 0;">
+            <table style="width: 100%; text-align: left;">
+                <tr><td style="padding: 8px 0;">Basic Salary</td><td style="text-align: right;">$0.00</td></tr>
+                <tr><td style="padding: 8px 0;">House Rent Allowance</td><td style="text-align: right;">$0.00</td></tr>
+                <tr><td style="padding: 8px 0;">Medical Allowance</td><td style="text-align: right;">$0.00</td></tr>
+                <tr><td style="padding: 8px 0; color: #ef4444;">Advance Deduction</td><td style="text-align: right; color: #ef4444;">-$0.00</td></tr>
+                <tr><td style="padding: 8px 0; color: #ef4444;">Tax Deduction</td><td style="text-align: right; color: #ef4444;">-$0.00</td></tr>
+                <tr><td colspan="2"><hr style="border: 0; border-top: 1px dashed var(--sidebar-border); margin: 10px 0;"></td></tr>
+                <tr><td><strong>Net Pay</strong></td><td style="text-align: right;"><strong>$0.00</strong></td></tr>
+            </table>
+        </div>
+    `;
+}
+
+initPage();
+function initPage() {
+  const tab = localStorage.getItem('pr_active_tab') || 'advance';
+  switchPrTab(tab);
+}
+
+function editRecord(id) {
+    const data = JSON.parse(document.getElementById(id).textContent);
+    
+    // Check if there is an existing form with a submit button
+    
+    // Find the currently active tab/stage to get the right form
+    let form = null;
+    const activeStage = document.querySelector('.active') || document.body;
+    
+    // Look for form inside active stage first
+    if (activeStage.classList.contains('active')) {
+        form = activeStage.querySelector('form[method="POST"]');
+    }
+    
+    // Fallback if not found
+    if (!form) {
+        const stages = document.querySelectorAll('.active');
+        for (let s of stages) {
+            form = s.querySelector('form[method="POST"]');
+            if (form) break;
+        }
+    }
+    if (!form) form = document.querySelector('form[method="POST"]');
+    if (!form) return;
+
+    
+    // Create or update hidden doc_id input
+    let docInput = form.querySelector('input[name="doc_id"]');
+    if (!docInput) {
+        docInput = document.createElement('input');
+        docInput.type = 'hidden';
+        docInput.name = 'doc_id';
+        form.appendChild(docInput);
+    }
+    docInput.value = id;
+    
+    // Populate fields
+    for (const [key, value] of Object.entries(data)) {
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            field.value = value;
+            if (field.tagName === 'SELECT') {
+                field.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+    
+    // Update button text
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Record';
+        submitBtn.style.backgroundColor = '#f59e0b';
+    }
+    
+    // Scroll to form
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

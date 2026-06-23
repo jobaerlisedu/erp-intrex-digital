@@ -1,0 +1,226 @@
+{% extends 'erp_base.html' %}
+{% block title %}User Management — Intrex ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+.um-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+.um-header h2 { margin:0; font-size:1.4rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:12px; }
+.um-header h2 i { color:var(--accent-color); }
+
+.um-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+.um-stat-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:20px 24px; display:flex; align-items:center; gap:16px; }
+.um-stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.um-stat-icon.green  { background:rgba(33,92,92,0.1); color:#215e5a; }
+.um-stat-icon.blue   { background:rgba(59,130,246,0.1); color:#3b82f6; }
+.um-stat-icon.amber  { background:rgba(245,158,11,0.1); color:#f59e0b; }
+.um-stat-icon.red    { background:rgba(239,68,68,0.1); color:#ef4444; }
+.um-stat-label { font-size:0.8rem; color:var(--text-secondary); margin-bottom:2px; }
+.um-stat-value { font-size:1.5rem; font-weight:700; color:var(--text-primary); }
+
+.um-table-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.um-table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.um-search { padding:8px 14px; border:1px solid var(--sidebar-border); border-radius:8px; font-size:0.9rem; width:260px; font-family:inherit; outline:none; }
+.um-search:focus { border-color:var(--accent-color); }
+
+.btn-create { display:inline-flex; align-items:center; gap:8px; padding:9px 20px; background:var(--accent-color); color:#fff; border:none; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer; text-decoration:none; transition:opacity .2s; }
+.btn-create:hover { opacity:.88; color:#fff; }
+
+.user-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+.user-table th { text-align:left; padding:10px 14px; font-size:0.8rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--sidebar-border); }
+.user-table td { padding:14px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.user-table tr:last-child td { border-bottom:none; }
+.user-table tr:hover td { background:#fafafa; }
+
+.user-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#215e5a,#75b66e); color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0; }
+.user-info { display:flex; align-items:center; gap:12px; }
+.user-name { font-weight:600; color:var(--text-primary); }
+.user-email { font-size:0.8rem; color:var(--text-secondary); }
+
+.module-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:0.75rem; font-weight:600; background:#e8f4f0; color:#215e5a; border:1px solid #c6e0da; }
+.chip i { font-size:0.65rem; }
+.chip-admin { background:#eff6ff; color:#2563eb; border-color:#bfdbfe; }
+.chip-super { background:#fdf4ff; color:#9333ea; border-color:#e9d5ff; }
+
+.badge-active   { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; background:#d1fae5; color:#065f46; }
+.badge-inactive { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; background:#fee2e2; color:#991b1b; }
+.badge-dot { width:6px; height:6px; border-radius:50%; }
+.badge-active .badge-dot { background:#10b981; }
+.badge-inactive .badge-dot { background:#ef4444; }
+
+.action-btns { display:flex; gap:6px; align-items:center; }
+.btn-icon-sm { width:32px; height:32px; border-radius:7px; border:1px solid var(--sidebar-border); background:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:0.8rem; transition:all .15s; text-decoration:none; }
+.btn-icon-sm:hover { border-color:var(--accent-color); color:var(--accent-color); }
+.btn-icon-sm.danger:hover { border-color:#ef4444; color:#ef4444; }
+.btn-icon-sm.success:hover { border-color:#10b981; color:#10b981; }
+
+.empty-state { text-align:center; padding:60px 24px; color:var(--text-secondary); }
+.empty-state i { font-size:2.5rem; color:#cbd5e1; margin-bottom:12px; }
+
+.messages-list { margin-bottom:20px; }
+.msg { padding:12px 18px; border-radius:8px; font-size:0.9rem; font-weight:500; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+.msg.success { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+.msg.error   { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="um-header">
+    <h2><i class="fa-solid fa-users-gear"></i> User Management</h2>
+    <a href="{% url 'accounts:user_create' %}" class="btn-create">
+        <i class="fa-solid fa-plus"></i> Add New User
+    </a>
+</div>
+
+{% if messages %}
+<div class="messages-list">
+    {% for message in messages %}
+    <div class="msg {{ message.tags }}">
+        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Stats -->
+{% with total=user_data|length %}
+<div class="um-stats">
+    <div class="um-stat-card">
+        <div class="um-stat-icon green"><i class="fa-solid fa-users"></i></div>
+        <div>
+            <div class="um-stat-label">Total Users</div>
+            <div class="um-stat-value">{{ total }}</div>
+        </div>
+    </div>
+    <div class="um-stat-card">
+        <div class="um-stat-icon blue"><i class="fa-solid fa-user-check"></i></div>
+        <div>
+            <div class="um-stat-label">Active</div>
+            <div class="um-stat-value">{{ user_data|length }}</div>
+        </div>
+    </div>
+    <div class="um-stat-card">
+        <div class="um-stat-icon amber"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+            <div class="um-stat-label">Admins</div>
+            <div class="um-stat-value">{% with count=0 %}{% for ud in user_data %}{% if ud.user.is_staff or ud.user.is_superuser %}{% with count=count|add:1 %}{% endwith %}{% endif %}{% endfor %}{{ user_data|length }}{% endwith %}</div>
+        </div>
+    </div>
+    <div class="um-stat-card">
+        <div class="um-stat-icon green"><i class="fa-solid fa-puzzle-piece"></i></div>
+        <div>
+            <div class="um-stat-label">ERP Modules</div>
+            <div class="um-stat-value">{{ all_modules|length }}</div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+
+<!-- User Table -->
+<div class="um-table-card">
+    <div class="um-table-header">
+        <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);">
+            <i class="fa-solid fa-list" style="color:var(--accent-color);margin-right:8px;"></i>All ERP Users
+        </h3>
+        <input class="um-search" type="text" id="um-search" onkeyup="filterUsers()" placeholder="Search by name or username…">
+    </div>
+
+    {% if user_data %}
+    <table class="user-table" id="um-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Module Access</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="um-tbody">
+        {% for ud in user_data %}
+        <tr class="um-row" data-name="{{ ud.user.username }} {{ ud.user.first_name }} {{ ud.user.last_name }}">
+            <td>
+                <div class="user-info">
+                    <div class="user-avatar">{{ ud.user.username|first|upper }}</div>
+                    <div>
+                        <div class="user-name">{{ ud.user.get_full_name|default:ud.user.username }}</div>
+                        <div class="user-email">{{ ud.user.email|default:"—" }}</div>
+                        <div class="user-email" style="margin-top:1px;">@{{ ud.user.username }}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                {% if ud.user.is_superuser %}
+                    <span class="chip chip-super"><i class="fa-solid fa-crown"></i> Superuser</span>
+                {% elif ud.user.is_staff %}
+                    <span class="chip chip-admin"><i class="fa-solid fa-shield-halved"></i> Admin</span>
+                {% else %}
+                    <span class="chip"><i class="fa-solid fa-user"></i> Staff</span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="module-chips">
+                    {% if ud.user.is_superuser or ud.user.is_staff %}
+                        <span class="chip chip-admin"><i class="fa-solid fa-infinity"></i> All Modules</span>
+                    {% else %}
+                        {% for m in ud.modules %}
+                        <span class="chip"><i class="fa-solid {{ m.2 }}"></i> {{ m.1 }}</span>
+                        {% empty %}
+                        <span style="color:var(--text-secondary);font-size:0.8rem;">No access assigned</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </td>
+            <td>
+                {% if ud.user.is_active %}
+                <span class="badge-active"><span class="badge-dot"></span>Active</span>
+                {% else %}
+                <span class="badge-inactive"><span class="badge-dot"></span>Inactive</span>
+                {% endif %}
+            </td>
+            <td style="color:var(--text-secondary);font-size:0.85rem;">
+                {{ ud.user.date_joined|date:"M d, Y" }}
+            </td>
+            <td>
+                <div class="action-btns">
+                    <a href="{% url 'accounts:user_edit' ud.user.id %}" class="btn-icon-sm" title="Edit user">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                    {% if ud.user != request.user %}
+                    <form method="POST" action="{% url 'accounts:user_toggle_active' ud.user.id %}" style="margin:0;"
+                          onsubmit="return confirm('{% if ud.user.is_active %}Deactivate{% else %}Activate{% endif %} {{ ud.user.username }}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-icon-sm {% if ud.user.is_active %}danger{% else %}success{% endif %}"
+                                title="{% if ud.user.is_active %}Deactivate{% else %}Activate{% endif %}">
+                            <i class="fa-solid {% if ud.user.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fa-solid fa-users"></i>
+        <p style="margin-top:12px;">No users found. <a href="{% url 'accounts:user_create' %}" style="color:var(--accent-color);">Create the first user</a>.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterUsers() {
+    const q = document.getElementById('um-search').value.toLowerCase();
+    document.querySelectorAll('.um-row').forEach(row => {
+        const name = row.getAttribute('data-name').toLowerCase();
+        row.style.display = name.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

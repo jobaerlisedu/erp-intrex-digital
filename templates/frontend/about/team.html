@@ -1,0 +1,177 @@
+{% extends "frontend.html" %}
+{% load static %}
+
+{% block content %}
+<main>
+
+
+      <!-- ======= Page Title =======-->
+      <section class="section page-title text-center"
+        style="background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-hover) 100%); color: var(--bs-white);">
+        <div class="container">
+          <span class="text-uppercase fw-semibold"
+            style="color: var(--bs-secondary); letter-spacing: 1.5px; font-size: 0.85rem;">Company Info</span>
+          <h1 class="text-white fw-bold mt-2 mb-3">Our Team</h1>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center mb-0">
+              <li class="breadcrumb-item"><a href="{% url 'frontend:index' %}"
+                  class="text-white opacity-75 text-decoration-none">Home</a></li>
+              <li class="breadcrumb-item active text-white fw-semibold" aria-current="page">Our Team</li>
+            </ol>
+          </nav>
+        </div>
+      </section>
+
+      <!-- ======= Content Section =======-->
+      <section class="section bg-light-subtle">
+        <div class="container">
+
+          <div class="row g-4 mb-5">
+
+            <div class="col-md-6" data-aos="fade-up" data-aos-delay="0">
+              <div class="card border-0 shadow-sm p-4 rounded-4 bg-body-tertiary h-100">
+                <div class="row g-0 align-items-start h-100">
+                  <div class="col-sm-4 mb-3 mb-sm-0 text-center">
+                    <img src="{% static 'images/person-sq-2-min.jpg' %}" alt="Jobaer Hossain" class="img-fluid rounded-3"
+                      style="max-width: 140px; width: 100%; object-fit: cover; aspect-ratio: 1/1;">
+                  </div>
+                  <div class="col-sm-8 ps-sm-4 text-center text-sm-start">
+                    <h3 class="h5 fw-bold text-heading-color mb-1" style="color: var(--bs-primary) !important;">Jobaer
+                      Hossain</h3>
+                    <span class="d-block small fw-bold text-muted mb-3">Chief Executive Officer & Partner</span>
+                    <div class="d-flex gap-2 justify-content-center justify-content-sm-start">
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-twitter-x"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-facebook"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-instagram"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-linkedin"></i></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Elena Rostova -->
+            <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+              <div class="card border-0 shadow-sm p-4 rounded-4 bg-body-tertiary h-100">
+                <div class="row g-0 align-items-start h-100">
+                  <div class="col-sm-4 mb-3 mb-sm-0 text-center">
+                    <img src="{% static 'images/person-sq-1-min.jpg' %}" alt="Elena Rostova" class="img-fluid rounded-3"
+                      style="max-width: 140px; width: 100%; object-fit: cover; aspect-ratio: 1/1;">
+                  </div>
+                  <div class="col-sm-8 ps-sm-4 text-center text-sm-start">
+                    <h3 class="h5 fw-bold text-heading-color mb-1" style="color: var(--bs-primary) !important;">Rashmin
+                      Chakma</h3>
+                    <span class="d-block small fw-bold text-muted mb-3">Chief Finance Officer & Partner</span>
+                    <div class="d-flex gap-2 justify-content-center justify-content-sm-start">
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-twitter-x"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-facebook"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-instagram"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-linkedin"></i></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- David Chen -->
+            <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+              <div class="card border-0 shadow-sm p-4 rounded-4 bg-body-tertiary h-100">
+                <div class="row g-0 align-items-start h-100">
+                  <div class="col-sm-4 mb-3 mb-sm-0 text-center">
+                    <img src="{% static 'images/person-sq-5-min.jpg' %}" alt="David Chen" class="img-fluid rounded-3"
+                      style="max-width: 140px; width: 100%; object-fit: cover; aspect-ratio: 1/1;">
+                  </div>
+                  <div class="col-sm-8 ps-sm-4 text-center text-sm-start">
+                    <h3 class="h5 fw-bold text-heading-color mb-1" style="color: var(--bs-primary) !important;">David
+                      Chen</h3>
+                    <span class="d-block small fw-bold text-muted mb-3">Chief Network Engineer</span>
+                    <div class="d-flex gap-2 justify-content-center justify-content-sm-start">
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-twitter-x"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-facebook"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-instagram"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-linkedin"></i></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sarah Jenkins -->
+            <div class="col-md-6" data-aos="fade-up" data-aos-delay="300">
+              <div class="card border-0 shadow-sm p-4 rounded-4 bg-body-tertiary h-100">
+                <div class="row g-0 align-items-start h-100">
+                  <div class="col-sm-4 mb-3 mb-sm-0 text-center">
+                    <img src="{% static 'images/person-sq-3-min.jpg' %}" alt="Sarah Jenkins" class="img-fluid rounded-3"
+                      style="max-width: 140px; width: 100%; object-fit: cover; aspect-ratio: 1/1;">
+                  </div>
+                  <div class="col-sm-8 ps-sm-4 text-center text-sm-start">
+                    <h3 class="h5 fw-bold text-heading-color mb-1" style="color: var(--bs-primary) !important;">Sarah
+                      Jenkins</h3>
+                    <span class="d-block small fw-bold text-muted mb-3">Director of Training & Career Development</span>
+                    <div class="d-flex gap-2 justify-content-center justify-content-sm-start">
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-twitter-x"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-facebook"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-instagram"></i></a>
+                      <a href="#"
+                        class="btn btn-sm btn-light p-0 d-inline-flex align-items-center justify-content-center rounded"
+                        style="width: 32px; height: 32px; background-color: rgba(var(--inverse-color-rgb), 0.05); color: var(--inverse-color); border: none;"><i
+                          class="bi bi-linkedin"></i></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    
+</main>
+{% endblock content %}

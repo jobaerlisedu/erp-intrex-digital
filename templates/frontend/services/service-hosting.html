@@ -1,0 +1,111 @@
+{% extends "frontend.html" %}
+{% load static %}
+
+{% block content %}
+<main>
+
+        
+        <!-- ======= Page Title =======-->
+        <section class="section page-title text-center" style="background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-hover) 100%); color: var(--bs-white);">
+          <div class="container">
+            <span class="text-uppercase fw-semibold" style="color: var(--bs-secondary); letter-spacing: 1.5px; font-size: 0.85rem;">Intrex Solutions</span>
+            <h1 class="text-white fw-bold mt-2 mb-3">Domain & Hosting</h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb justify-content-center mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'frontend:index' %}" class="text-white opacity-75 text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'frontend:index' %}#services" class="text-white opacity-75 text-decoration-none">Services</a></li>
+                <li class="breadcrumb-item active text-white fw-semibold" aria-current="page">Domain & Hosting</li>
+              </ol>
+            </nav>
+          </div>
+        </section>
+        
+        <!-- ======= Content Section =======-->
+        <section class="section">
+          <div class="container">
+            <div class="row g-5">
+              
+              <!-- Left Column: Detailed Service Info -->
+              <div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+                <div class="content-wrapper">
+                  <h2 class="h3 fw-bold mb-4">Fast & Secure Web Environments</h2>
+                  <p class="fs-5 lh-lg mb-4">Your website is the digital storefront of your brand, and load speeds directly impact consumer conversions and SEO analytics. Intrex Digital Hub delivers enterprise-grade domain and hosting packages using modern NVMe SSD architectures and server-side optimizations. We keep your systems operating with a 99.9% uptime SLA.</p>
+                  
+                  <h3 class="h4 fw-bold mt-5 mb-3">Key Features & Capabilities</h3>
+                  <ul class="list-checked list-unstyled mb-5">
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                      <span class="icon rounded-circle text-center d-inline-flex align-items-center justify-content-center bg-light text-primary" style="width:28px; height:28px; min-width:28px;"><i class="bi bi-check"></i></span>
+                      <div><strong>NVMe SSD Web Hosting</strong>: Blazing-fast shared server systems with NVMe storage nodes that load pages up to 10x faster than standard SATA hosting.</div>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                      <span class="icon rounded-circle text-center d-inline-flex align-items-center justify-content-center bg-light text-primary" style="width:28px; height:28px; min-width:28px;"><i class="bi bi-check"></i></span>
+                      <div><strong>Dedicated Virtual Servers (VPS)</strong>: Scale with dedicated computational power, root SSH access, RAM limits, and scalable configurations.</div>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                      <span class="icon rounded-circle text-center d-inline-flex align-items-center justify-content-center bg-light text-primary" style="width:28px; height:28px; min-width:28px;"><i class="bi bi-check"></i></span>
+                      <div><strong>Domain Registrations & SSLs</strong>: Direct purchases of global TLDs (.com, .net, .org) with integrated DNS mapping and free automated Let's Encrypt SSL certificates.</div>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                      <span class="icon rounded-circle text-center d-inline-flex align-items-center justify-content-center bg-light text-primary" style="width:28px; height:28px; min-width:28px;"><i class="bi bi-check"></i></span>
+                      <div><strong>Custom Professional Emails</strong>: Setup and support of professional corporate email addresses linked directly to your custom domain names.</div>
+                    </li>
+                  </ul>
+                  
+                  <h3 class="h4 fw-bold mt-5 mb-3">Business Value</h3>
+                  <p class="lh-lg mb-4">By packaging domain registration and SSD hostings together, we simplify invoice management and accelerate DNS propagation times. Our platforms come equipped with automated security firewalls and active file scanning to safeguard user databases.</p>
+                </div>
+              </div>
+              
+              <!-- Right Column: Sidebar Navigation and Inquiry Form -->
+              <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="sidebar d-flex flex-column gap-4">
+                  
+                  <!-- Solutions List -->
+                  <div class="p-4 rounded-4 shadow-sm bg-body-tertiary">
+                    <h4 class="h5 fw-bold mb-3 pb-2 border-bottom">Our Solutions</h4>
+                    <ul class="nav flex-column gap-2">
+                      <li class="nav-item"><a href="{% url 'frontend:service_network' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Network Solution</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_cloud' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Cloud Solution</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_hosting' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center bg-primary text-white"><span class="fs-6">Domain & Hosting</span> <i class="bi bi-chevron-right text-white"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_managed_it' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">IT Managed Services</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:service_business_suite' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Business Suite</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                      <li class="nav-item"><a href="{% url 'frontend:training' %}" class="nav-link p-2 rounded text-decoration-none d-flex justify-content-between align-items-center text-heading-color"><span class="fs-6">Professional Training</span> <i class="bi bi-chevron-right text-primary"></i></a></li>
+                    </ul>
+                  </div>
+                  
+                  <!-- Quick Inquiry -->
+                  <div class="p-4 rounded-4 shadow-sm bg-body-tertiary">
+                    <h4 class="h5 fw-bold mb-3 pb-2 border-bottom">Quick Inquiry</h4>
+                    <form id="contactForm">
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="name">Name</label>
+                        <input class="form-control" id="name" type="text" name="name" required="">
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="email">Email</label>
+                        <input class="form-control" id="email" type="email" name="email" required="">
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="subject">Service Area</label>
+                        <input class="form-control" id="subject" type="text" name="subject" value="Domain & Hosting" readonly>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small mb-1" for="message">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required="" placeholder="Describe your web hosting or VPS demands..."></textarea>
+                      </div>
+                      <button class="btn btn-primary w-100 fw-semibold" type="submit">Submit Request</button>
+                    </form>
+                    <div class="mt-3 d-none alert alert-success" id="successMessage">Request sent successfully!</div>
+                    <div class="mt-3 d-none alert alert-danger" id="errorMessage">Request failed. Please try again.</div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </section>
+        
+      
+</main>
+{% endblock content %}

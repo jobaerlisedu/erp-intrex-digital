@@ -1,0 +1,165 @@
+{% extends 'erp_base.html' %}
+{% block title %}{% if action == 'Edit' %}Edit User{% else %}Create User{% endif %} — Intrex ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-page-header { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
+.form-page-header a { color:var(--text-secondary); text-decoration:none; font-size:0.9rem; display:inline-flex; align-items:center; gap:6px; transition:color .15s; }
+.form-page-header a:hover { color:var(--accent-color); }
+.form-page-header h2 { margin:0; font-size:1.35rem; font-weight:700; color:var(--text-primary); }
+
+.user-form-grid { display:grid; grid-template-columns:1fr 380px; gap:24px; align-items:start; }
+
+.form-section { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:28px; }
+.form-section h3 { margin:0 0 20px 0; font-size:1rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:9px; padding-bottom:14px; border-bottom:1px solid var(--sidebar-border); }
+.form-section h3 i { color:var(--accent-color); }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.form-group { margin-bottom:18px; }
+.form-group label { display:block; font-size:0.83rem; font-weight:600; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em; }
+.form-group label .req { color:#ef4444; margin-left:2px; }
+.form-control { width:100%; padding:9px 13px; border:1px solid var(--sidebar-border); border-radius:8px; font-size:0.9rem; font-family:inherit; color:var(--text-primary); outline:none; transition:border-color .15s; box-sizing:border-box; }
+.form-control:focus { border-color:var(--accent-color); }
+
+/* Toggle switch */
+.toggle-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #f1f5f9; }
+.toggle-row:last-child { border-bottom:none; padding-bottom:0; }
+.toggle-label { font-weight:500; color:var(--text-primary); font-size:0.9rem; }
+.toggle-sub   { font-size:0.78rem; color:var(--text-secondary); margin-top:2px; }
+.toggle-switch input { display:none; }
+.toggle-switch label { display:block; width:44px; height:24px; background:#cbd5e1; border-radius:12px; position:relative; cursor:pointer; transition:background .2s; }
+.toggle-switch label::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:3px; left:3px; transition:left .2s, transform .1s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.toggle-switch input:checked + label { background:var(--accent-color); }
+.toggle-switch input:checked + label::after { left:23px; }
+
+.module-grid { display:grid; grid-template-columns:1fr; gap:2px; }
+
+.btn-submit-form { width:100%; padding:12px; background:var(--accent-color); color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:opacity .2s; margin-top:4px; }
+.btn-submit-form:hover { opacity:.88; }
+.btn-cancel { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:11px; background:#fff; color:var(--text-primary); border:1px solid var(--sidebar-border); border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; text-decoration:none; margin-top:8px; transition:all .15s; }
+.btn-cancel:hover { border-color:var(--accent-color); color:var(--accent-color); }
+
+.info-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; font-size:0.82rem; color:#166534; margin-bottom:20px; display:flex; align-items:flex-start; gap:8px; }
+.info-box i { margin-top:1px; flex-shrink:0; }
+
+.error-msg { background:#fee2e2; border:1px solid #fca5a5; border-radius:8px; padding:12px 16px; font-size:0.85rem; color:#991b1b; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-page-header">
+    <a href="{% url 'accounts:user_list' %}"><i class="fa-solid fa-arrow-left"></i> Back to Users</a>
+    <span style="color:var(--sidebar-border);">|</span>
+    <h2>{% if action == 'Edit' %}Edit User: {{ edit_user.username }}{% else %}Create New User{% endif %}</h2>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i>{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<form method="POST">
+{% csrf_token %}
+<div class="user-form-grid">
+
+    <!-- Left: User Details -->
+    <div>
+        <div class="form-section" style="margin-bottom:20px;">
+            <h3><i class="fa-solid fa-user"></i> Account Details</h3>
+
+            <div class="form-group">
+                <label>Username <span class="req">*</span></label>
+                {% if action == 'Edit' %}
+                    <input type="text" class="form-control" value="{{ edit_user.username }}" disabled style="background:#f8fafc;cursor:not-allowed;">
+                    <input type="hidden" name="username" value="{{ edit_user.username }}">
+                {% else %}
+                    <input type="text" name="username" class="form-control" placeholder="e.g. john.smith" required value="{{ form_data.username|default:'' }}">
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" class="form-control" placeholder="John" value="{{ form_data.first_name|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" class="form-control" placeholder="Smith" value="{{ form_data.last_name|default:'' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" class="form-control" placeholder="john@example.com" value="{{ form_data.email|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label>Password {% if action == 'Edit' %}<span style="font-weight:400;color:var(--text-secondary);">(leave blank to keep current)</span>{% else %}<span class="req">*</span>{% endif %}</label>
+                <input type="password" name="password" class="form-control" placeholder="{% if action == 'Edit' %}••••••••{% else %}Set a strong password{% endif %}" {% if action == 'Create' %}required{% endif %}>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3><i class="fa-solid fa-shield-halved"></i> Admin Privileges</h3>
+            {% if action == 'Edit' and not request.user.is_superuser %}
+            <div class="info-box"><i class="fa-solid fa-circle-info"></i> Only a superuser can change admin privileges.</div>
+            {% endif %}
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label">ERP Admin (Staff)</div>
+                    <div class="toggle-sub">Can manage users and access all modules</div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="is_staff" name="is_staff"
+                        {% if edit_user.is_staff %}checked{% endif %}
+                        {% if action == 'Edit' and not request.user.is_superuser %}disabled{% endif %}>
+                    <label for="is_staff"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Module Access -->
+    <div>
+        <div class="form-section">
+            <h3><i class="fa-solid fa-puzzle-piece"></i> Module Access</h3>
+            {% if edit_user.is_superuser %}
+            <div class="info-box"><i class="fa-solid fa-crown"></i> This user is a Superuser and has automatic access to all modules.</div>
+            {% elif edit_user.is_staff %}
+            <div class="info-box"><i class="fa-solid fa-shield-halved"></i> This user is an Admin and has access to all modules.</div>
+            {% else %}
+            <p style="font-size:0.83rem;color:var(--text-secondary);margin:0 0 16px 0;">Select which ERP modules this user can access.</p>
+            {% endif %}
+
+            <div class="module-grid">
+            {% for module_id, module_name, module_icon in all_modules %}
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label"><i class="fa-solid {{ module_icon }}" style="color:var(--accent-color);margin-right:6px;width:16px;"></i>{{ module_name }}</div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="mod_{{ module_id }}" name="modules" value="{{ module_id }}"
+                        {% if module_id in user_module_names or edit_user.is_superuser or edit_user.is_staff %}checked{% endif %}
+                        {% if edit_user.is_superuser or edit_user.is_staff %}disabled{% endif %}>
+                    <label for="mod_{{ module_id }}"></label>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        </div>
+
+        <div style="margin-top:20px;">
+            <button type="submit" class="btn-submit-form">
+                <i class="fa-solid {% if action == 'Edit' %}fa-pen-to-square{% else %}fa-user-plus{% endif %}"></i>
+                {% if action == 'Edit' %}Save Changes{% else %}Create User{% endif %}
+            </button>
+            <a href="{% url 'accounts:user_list' %}" class="btn-cancel">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </a>
+        </div>
+    </div>
+
+</div>
+</form>
+{% endblock %}

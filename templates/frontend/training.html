@@ -1,0 +1,602 @@
+{% extends "frontend.html" %}
+{% load static %}
+
+{% block content %}
+<main>
+
+
+      <!-- ======= Page Title =======-->
+      <section class="section page-title text-center"
+        style="background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-hover) 100%); color: var(--bs-white);">
+        <div class="container">
+          <span class="text-uppercase fw-semibold"
+            style="color: var(--bs-secondary); letter-spacing: 1.5px; font-size: 0.85rem;">Intrex Education</span>
+          <h1 class="text-white fw-bold mt-2 mb-3">Professional IT Training</h1>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center mb-0">
+              <li class="breadcrumb-item"><a href="{% url 'frontend:index' %}"
+                  class="text-white opacity-75 text-decoration-none">Home</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'frontend:index' %}#services"
+                  class="text-white opacity-75 text-decoration-none">Services</a></li>
+              <li class="breadcrumb-item active text-white fw-semibold" aria-current="page">Professional Training</li>
+            </ol>
+          </nav>
+        </div>
+      </section>
+
+      <!-- ======= Content Section =======-->
+      <section class="section">
+        <div class="container">
+          <div class="row g-5">
+
+            <!-- Left Column: Detailed Service Info -->
+            <div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+              <div class="content-wrapper">
+                <h2 class="h3 fw-bold mb-4">Hands-on, Industry-Certified IT Education</h2>
+                <p class="fs-5 lh-lg mb-4">Equip your team or launch your career with expert-led technical courses
+                  designed around actual hardware labs. Intrex Digital Hub provides rigorous, syllabus-aligned IT
+                  training that bridges the theoretical gap with real-world infrastructure operations.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Sidebar Navigation -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+              <div class="sidebar d-flex flex-column gap-4">
+
+                <!-- Verify Certificate CTA Card -->
+                <div class="p-4 rounded-4 shadow-sm bg-body-tertiary text-center border">
+                  <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 text-primary"
+                    style="width: 56px; height: 56px; background-color: rgba(var(--bs-primary-rgb), 0.15);">
+                    <i class="bi bi-patch-check-fill fs-3"></i>
+                  </div>
+                  <h4 class="h5 fw-bold mb-2">Certificate Verification</h4>
+                  <p class="text-muted small mb-4">Validate student credentials and course completion status using our
+                    secure digital verification system.</p>
+                  <a href="{% url 'frontend:verify_certificate' %}" class="btn btn-primary w-100 fw-semibold py-2 px-3">
+                    <i class="bi bi-shield-check me-2"></i>Verify Certificate
+                  </a>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Course Domains Grid Section (Full Space) -->
+          <div class="row mt-5" data-aos="fade-up" data-aos-delay="150">
+            <div class="col-12">
+              <h3 class="h4 fw-bold mb-4">Core Training Domains</h3>
+              <div class="row g-4 mb-5" id="courseCardsContainer">
+                {% if courses %}
+                  {% for c in courses %}
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border shadow-sm rounded-4 p-4 d-flex flex-column justify-content-between">
+                      <div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                          <i class="bi {{ c.icon|default:'bi-journal-bookmark' }} fs-2 text-primary"></i>
+                          <h4 class="h5 fw-bold mb-0 text-heading-color">{{ c.title }}</h4>
+                        </div>
+                        <span class="badge text-white fw-semibold mb-3" style="background-color: var(--bs-primary);">Target: {{ c.target }}</span>
+                        <p class="small text-muted mb-3">{{ c.description }}</p>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                          <span class="badge bg-light text-dark border fw-normal"><i class="bi bi-person-fill me-1 text-primary"></i> {{ c.trainer|default:'Expert Trainer' }}</span>
+                          <span class="badge bg-light text-dark border fw-normal"><i class="bi bi-tag-fill me-1 text-primary"></i> {% if c.fee %}{{ c.fee }} BDT{% else %}TBA{% endif %}</span>
+                        </div>
+                      </div>
+                      <div class="border-top pt-3 mt-2 d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <span class="small text-muted fw-semibold"><i class="bi bi-clock me-1"></i> {{ c.duration }}</span>
+                        <div class="d-flex gap-2">
+                          <button class="btn btn-sm btn-outline-primary py-1 px-3" data-bs-toggle="modal" data-bs-target="#inquiryModal" data-course="{{ c.title }}">Enquire</button>
+                          <button class="btn btn-sm btn-primary py-1 px-3" data-bs-toggle="modal" data-bs-target="#registrationModal" data-course="{{ c.title }}">Register</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="col-12 text-center text-muted">No courses available at the moment.</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======= Course Registration Modal ======= -->
+      <div class="modal fade" id="registrationModal" tabindex="-1" aria-labelledby="registrationModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content rounded-4 overflow-hidden border-0 shadow-lg">
+
+            <!-- Modal Header -->
+            <div class="modal-header border-0 pb-0 px-4 pt-4"
+              style="background: linear-gradient(135deg, var(--bs-primary) 0%, #1a4a4a 100%);">
+              <div>
+                <span class="badge bg-white text-primary fw-semibold mb-2 px-3 py-1"
+                  style="font-size: 0.7rem; letter-spacing: 0.5px;">ENROLL NOW</span>
+                <h5 class="modal-title fw-bold text-white mb-1" id="registrationModalLabel">Course Registration</h5>
+                <p class="text-white opacity-75 small mb-3">Fill in your details below and our team will confirm your
+                  enrollment within 24 hours.</p>
+              </div>
+              <button type="button" class="btn-close btn-close-white ms-auto mb-auto" data-bs-dismiss="modal"
+                aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body px-4 py-4">
+              <form id="registrationForm" novalidate>
+
+                <!-- Row 1: Name + Email -->
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold mb-1" for="reg-name">Full Name <span
+                        class="text-danger">*</span></label>
+                    <input class="form-control" id="reg-name" type="text" name="full_name"
+                      placeholder="e.g. Jobaer Hossain" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold mb-1" for="reg-email">Email Address <span
+                        class="text-danger">*</span></label>
+                    <input class="form-control" id="reg-email" type="email" name="email" placeholder="you@example.com"
+                      required>
+                  </div>
+                </div>
+
+                <!-- Row 2: Phone + Course -->
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold mb-1" for="reg-phone">Phone Number <span
+                        class="text-danger">*</span></label>
+                    <input class="form-control" id="reg-phone" type="tel" name="phone" placeholder="+880 1XXX-XXXXXX"
+                      required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold mb-1" for="reg-course">Course <span
+                        class="text-danger">*</span></label>
+                    <select class="form-select" id="reg-course" name="course" required>
+                      <option value="" disabled selected>Select a course</option>
+                      {% for c in courses %}
+                        <option value="{{ c.title }}">{{ c.title }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Row 3: Education -->
+                <div class="row g-3 mb-3">
+                  <div class="col-12">
+                    <label class="form-label small fw-semibold mb-1" for="reg-education">Educational Background</label>
+                    <select class="form-select" id="reg-education" name="education">
+                      <option value="" selected>Select (optional)</option>
+                      <option value="High School / SSC">High School / SSC</option>
+                      <option value="HSC / Diploma">HSC / Diploma</option>
+                      <option value="Bachelor's Degree">Bachelor's Degree</option>
+                      <option value="Master's Degree">Master's Degree</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Row 4: Job Holder Check -->
+                <div class="row g-3 mb-3">
+                  <div class="col-12">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch" id="reg-is-job-holder"
+                        name="is_job_holder">
+                      <label class="form-check-label small fw-semibold text-heading-color" for="reg-is-job-holder">Are
+                        you currently a job holder?</label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Job Profile Details (Hidden by default) -->
+                <div id="reg-job-profile-fields" class="d-none border p-3 rounded-4 mb-3 bg-light">
+                  <h6 class="small fw-bold mb-3 text-primary"><i class="bi bi-briefcase-fill me-1"></i>Job Profile
+                    Details</h6>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold mb-1" for="reg-company">Company Name <span
+                          class="text-danger">*</span></label>
+                      <input class="form-control" id="reg-company" type="text" name="company"
+                        placeholder="e.g. Intrex Digital">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold mb-1" for="reg-designation">Designation <span
+                          class="text-danger">*</span></label>
+                      <input class="form-control" id="reg-designation" type="text" name="designation"
+                        placeholder="e.g. Network Engineer">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Message -->
+                <div class="mb-4">
+                  <label class="form-label small fw-semibold mb-1" for="reg-message">Additional Notes <span
+                      class="text-muted fw-normal">(optional)</span></label>
+                  <textarea class="form-control" id="reg-message" name="message" rows="3"
+                    placeholder="Any specific goals, experience level, or questions..."></textarea>
+                </div>
+
+                <!-- Info note -->
+                <div class="alert alert-info d-flex gap-2 align-items-start py-2 px-3 mb-4 small">
+                  <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+                  <span>Our team will contact you within <strong>24 hours</strong> to confirm your seat and share
+                    payment details.</span>
+                </div>
+
+                <!-- Submit -->
+                <button class="btn btn-primary w-100 fw-semibold py-2" type="submit" id="reg-submit-btn">
+                  <i class="bi bi-send me-2"></i>Submit Registration
+                </button>
+              </form>
+
+              <!-- Feedback messages -->
+              <div class="mt-3 d-none alert alert-success d-flex gap-2 align-items-center" id="regSuccessMessage">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>Registration submitted! We'll reach out within 24 hours. 🎉</span>
+              </div>
+              <div class="mt-3 d-none alert alert-danger" id="regErrorMessage">Submission failed. Please try again.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <!-- End Registration Modal -->
+
+      <!-- ======= Course Inquiry Modal ======= -->
+      <div class="modal fade" id="inquiryModal" tabindex="-1" aria-labelledby="inquiryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content rounded-4 overflow-hidden border-0 shadow-lg">
+
+            <!-- Modal Header -->
+            <div class="modal-header border-0 pb-0 px-4 pt-4"
+              style="background: linear-gradient(135deg, var(--bs-primary) 0%, #1a4a4a 100%);">
+              <div>
+                <span class="badge bg-white text-primary fw-semibold mb-2 px-3 py-1"
+                  style="font-size: 0.7rem; letter-spacing: 0.5px;">QUICK INQUIRY</span>
+                <h5 class="modal-title fw-bold text-white mb-1" id="inquiryModalLabel">Course Inquiry</h5>
+                <p class="text-white opacity-75 small mb-3">Have questions? Ask us anything about the course curriculum,
+                  schedule, or certifications.</p>
+              </div>
+              <button type="button" class="btn-close btn-close-white ms-auto mb-auto" data-bs-dismiss="modal"
+                aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body px-4 py-4">
+              <form id="contactForm">
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold mb-1" for="name">Name <span
+                      class="text-danger">*</span></label>
+                  <input class="form-control" id="name" type="text" name="name" placeholder="e.g. Jobaer Hossain"
+                    required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold mb-1" for="email">Email <span
+                      class="text-danger">*</span></label>
+                  <input class="form-control" id="email" type="email" name="email" placeholder="you@example.com"
+                    required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold mb-1" for="phone">Mobile Number <span
+                      class="text-danger">*</span></label>
+                  <input class="form-control" id="phone" type="tel" name="phone" placeholder="+880 1XXX-XXXXXX"
+                    required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold mb-1" for="subject">Course Domain <span
+                      class="text-danger">*</span></label>
+                  <select class="form-select" id="subject" name="subject" required>
+                    <option value="" disabled selected>Select a Course</option>
+                    {% for c in courses %}
+                      <option value="{{ c.title }}">{{ c.title }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="mb-4">
+                  <label class="form-label small fw-semibold mb-1" for="message">Message <span
+                      class="text-danger">*</span></label>
+                  <textarea class="form-control" id="message" name="message" rows="4"
+                    placeholder="Enter your query or goals..." required></textarea>
+                </div>
+                <button class="btn btn-primary w-100 fw-semibold py-2" type="submit">
+                  <i class="bi bi-send me-2"></i>Submit Request
+                </button>
+              </form>
+              <div class="mt-3 d-none alert alert-success" id="successMessage">Request sent successfully!</div>
+              <div class="mt-3 d-none alert alert-danger" id="errorMessage">Request failed. Please try again.</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <!-- End Inquiry Modal -->
+
+    
+</main>
+{% endblock content %}
+
+{% block extra_js %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const registrationModal = document.getElementById("registrationModal");
+      const registrationForm = document.getElementById("registrationForm");
+      const regSuccessMessage = document.getElementById("regSuccessMessage");
+      const regErrorMessage = document.getElementById("regErrorMessage");
+      const regCourseSelect = document.getElementById("reg-course");
+
+      const isJobHolderSwitch = document.getElementById("reg-is-job-holder");
+      const jobFieldsContainer = document.getElementById("reg-job-profile-fields");
+      const regCompany = document.getElementById("reg-company");
+      const regDesignation = document.getElementById("reg-designation");
+
+      if (isJobHolderSwitch && jobFieldsContainer) {
+        isJobHolderSwitch.addEventListener("change", function () {
+          if (this.checked) {
+            jobFieldsContainer.classList.remove("d-none");
+            regCompany.setAttribute("required", "");
+            regDesignation.setAttribute("required", "");
+          } else {
+            jobFieldsContainer.classList.add("d-none");
+            regCompany.removeAttribute("required");
+            regDesignation.removeAttribute("required");
+            regCompany.value = "";
+            regDesignation.value = "";
+          }
+        });
+      }
+
+      // Pre-fill course dropdown when any "Register" button opens the modal
+      if (registrationModal && regCourseSelect) {
+        registrationModal.addEventListener("show.bs.modal", function (event) {
+          const triggerBtn = event.relatedTarget;
+          const course = triggerBtn && triggerBtn.dataset.course;
+          if (course) regCourseSelect.value = course;
+          if (isJobHolderSwitch) {
+            isJobHolderSwitch.checked = false;
+            isJobHolderSwitch.dispatchEvent(new Event("change"));
+          }
+          if (regSuccessMessage) regSuccessMessage.classList.add("d-none");
+          if (regErrorMessage) regErrorMessage.classList.add("d-none");
+          if (registrationForm) registrationForm.classList.remove("d-none");
+        });
+      }
+
+      if (registrationForm) {
+        registrationForm.addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const submitBtn = registrationForm.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.innerHTML;
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Saving Registration...';
+
+          if (regSuccessMessage) regSuccessMessage.classList.add("d-none");
+          if (regErrorMessage) regErrorMessage.classList.add("d-none");
+
+          const fullName = document.getElementById("reg-name").value.trim();
+          const email = document.getElementById("reg-email").value.trim();
+          const phone = document.getElementById("reg-phone").value.trim();
+          const course = document.getElementById("reg-course").value;
+          const education = document.getElementById("reg-education").value;
+          const message = document.getElementById("reg-message").value.trim();
+
+          const isJobHolder = isJobHolderSwitch ? isJobHolderSwitch.checked : false;
+          const companyName = isJobHolder ? regCompany.value.trim() : "";
+          const designation = isJobHolder ? regDesignation.value.trim() : "";
+
+          if (isJobHolder && (!companyName || !designation)) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            if (regErrorMessage) {
+              regErrorMessage.textContent = "Please fill in all required job profile fields (Company Name and Designation).";
+              regErrorMessage.classList.remove("d-none");
+            }
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('fullName', fullName);
+          formData.append('email', email);
+          formData.append('phone', phone);
+          formData.append('course', course);
+          formData.append('education', education);
+          formData.append('message', message);
+          formData.append('isJobHolder', isJobHolder);
+          formData.append('companyName', companyName);
+          formData.append('designation', designation);
+
+          try {
+            const response = await fetch("{% url 'frontend:register_course' %}", {
+              method: "POST",
+              body: formData,
+              headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+              }
+            });
+            const result = await response.json();
+            if (result.status !== 'success') {
+              throw new Error(result.message || 'Submission failed');
+            }
+            const regKey = result.key;
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+
+            registrationForm.reset();
+            registrationForm.classList.add("d-none");
+
+            if (regSuccessMessage) {
+              regSuccessMessage.innerHTML = `
+                <div class="w-100 p-2">
+                  <div class="d-flex align-items-center gap-2 mb-3 text-success">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                    <h5 class="fw-bold mb-0 text-success">Registration Submitted!</h5>
+                  </div>
+                  <p class="text-muted small">Your unique online registration key has been generated:</p>
+                  <div class="d-flex align-items-center gap-2 mb-3 bg-body-secondary p-3 rounded-3 border">
+                    <code class="fs-5 font-monospace fw-bold flex-grow-1" id="generatedRegKeyVal">${regKey}</code>
+                    <button class="btn btn-sm btn-primary py-1 px-3 d-flex align-items-center gap-1" id="copyRegKeyBtn" type="button">
+                      <i class="bi bi-clipboard"></i> <span>Copy Key</span>
+                    </button>
+                  </div>
+                  <p class="small text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Our admissions team will contact you within <strong>24 hours</strong> to verify your credentials and complete your batch enrollment. Please keep this key safe for reference.</p>
+                </div>
+              `;
+              regSuccessMessage.className = "mt-3 alert alert-success d-flex align-items-start border border-success p-3 rounded-4 shadow-sm";
+              regSuccessMessage.classList.remove("d-none");
+
+              const copyBtn = document.getElementById("copyRegKeyBtn");
+              if (copyBtn) {
+                copyBtn.onclick = function () {
+                  navigator.clipboard.writeText(regKey);
+                  const btnSpan = copyBtn.querySelector("span");
+                  const btnIcon = copyBtn.querySelector("i");
+                  btnSpan.textContent = "Copied!";
+                  btnIcon.className = "bi bi-check-lg";
+                  copyBtn.className = "btn btn-sm btn-success py-1 px-3 d-flex align-items-center gap-1";
+                  setTimeout(() => {
+                    btnSpan.textContent = "Copy Key";
+                    btnIcon.className = "bi bi-clipboard";
+                    copyBtn.className = "btn btn-sm btn-primary py-1 px-3 d-flex align-items-center gap-1";
+                  }, 2000);
+                };
+              }
+            }
+          } catch (err) {
+            console.error("Registration error:", err);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            if (regErrorMessage) {
+              regErrorMessage.textContent = "Failed to save registration: " + (err.message || "Unknown error. Please try again.");
+              regErrorMessage.classList.remove("d-none");
+            }
+          }
+        });
+      }
+
+      const inquiryModal = document.getElementById("inquiryModal");
+      const inqCourseSelect = document.getElementById("subject");
+      const contactForm = document.getElementById("contactForm");
+      const successMessage = document.getElementById("successMessage");
+      const errorMessage = document.getElementById("errorMessage");
+
+      if (inquiryModal && inqCourseSelect) {
+        inquiryModal.addEventListener("show.bs.modal", function (event) {
+          const triggerBtn = event.relatedTarget;
+          const course = triggerBtn && triggerBtn.dataset.course;
+          if (course) inqCourseSelect.value = course;
+          if (successMessage) successMessage.classList.add("d-none");
+          if (errorMessage) errorMessage.classList.add("d-none");
+          if (contactForm) contactForm.classList.remove("d-none");
+        });
+      }
+
+      if (contactForm) {
+        contactForm.addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const submitBtn = contactForm.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.innerHTML || submitBtn.textContent;
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Saving Inquiry...';
+
+          if (successMessage) successMessage.classList.add("d-none");
+          if (errorMessage) errorMessage.classList.add("d-none");
+
+          const name = (document.getElementById("name")?.value || "").trim();
+          const email = (document.getElementById("email")?.value || "").trim();
+          const phone = (document.getElementById("phone")?.value || "").trim();
+          const subject = (document.getElementById("subject")?.value || "").trim();
+          const message = (document.getElementById("message")?.value || "").trim();
+
+          if (!name || !email || !phone || !message) {
+            if (errorMessage) {
+              errorMessage.textContent = "Please fill in all required fields.";
+              errorMessage.classList.remove("d-none");
+            }
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('name', name);
+          formData.append('email', email);
+          formData.append('phone', phone);
+          formData.append('subject', subject);
+          formData.append('message', message);
+          formData.append('source', 'training-page');
+
+          try {
+            const response = await fetch("{% url 'frontend:inquire_course' %}", {
+              method: "POST",
+              body: formData,
+              headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+              }
+            });
+            const result = await response.json();
+            if (result.status !== 'success') {
+              throw new Error(result.message || 'Submission failed');
+            }
+            const inquiryKey = result.key;
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            contactForm.reset();
+            contactForm.classList.add("d-none");
+
+            if (successMessage) {
+              successMessage.innerHTML = `
+                <div class="w-100">
+                  <div class="d-flex align-items-center gap-2 mb-2 text-success">
+                    <i class="bi bi-check-circle-fill fs-5"></i>
+                    <span class="fw-bold">Inquiry Submitted!</span>
+                  </div>
+                  <p class="small text-muted mb-2">Your inquiry reference key:</p>
+                  <div class="d-flex align-items-center gap-2 bg-body-secondary p-2 rounded-3 border mb-2">
+                    <code class="fw-bold font-monospace flex-grow-1" id="generatedInqKeyVal">${inquiryKey}</code>
+                    <button class="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center gap-1" id="copyInqKeyBtn" type="button">
+                      <i class="bi bi-clipboard"></i> <span>Copy</span>
+                    </button>
+                  </div>
+                  <p class="small text-muted mb-0"><i class="bi bi-info-circle me-1"></i>We'll respond within <strong>24 hours</strong>.</p>
+                </div>
+              `;
+              successMessage.className = "mt-3 alert alert-success d-flex align-items-start border border-success p-3 rounded-4 shadow-sm";
+              successMessage.classList.remove("d-none");
+
+              const copyBtn = document.getElementById("copyInqKeyBtn");
+              if (copyBtn) {
+                copyBtn.onclick = function () {
+                  navigator.clipboard.writeText(inquiryKey);
+                  const btnSpan = copyBtn.querySelector("span");
+                  const btnIcon = copyBtn.querySelector("i");
+                  btnSpan.textContent = "Copied!";
+                  btnIcon.className = "bi bi-check-lg";
+                  copyBtn.className = "btn btn-sm btn-success py-1 px-2 d-flex align-items-center gap-1";
+                  setTimeout(() => {
+                    btnSpan.textContent = "Copy";
+                    btnIcon.className = "bi bi-clipboard";
+                    copyBtn.className = "btn btn-sm btn-primary py-1 px-2 d-flex align-items-center gap-1";
+                  }, 2000);
+                };
+              }
+            }
+          } catch (err) {
+            console.error("Inquiry error:", err);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            if (errorMessage) {
+              errorMessage.textContent = "Failed to submit inquiry: " + (err.message || "Please try again.");
+              errorMessage.classList.remove("d-none");
+            }
+          }
+        });
+      }
+    });
+  </script>
+{% endblock extra_js %}

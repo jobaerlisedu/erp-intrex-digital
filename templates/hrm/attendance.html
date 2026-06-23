@@ -1,0 +1,408 @@
+{% extends 'erp_base.html' %}
+{% block title %}Attendance Management - Intrex ERP
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.att-tabs { display:flex; gap:16px; margin-bottom:28px; border-bottom:1px solid var(--sidebar-border); padding-bottom:8px; }
+.att-tab-btn { color:var(--text-secondary); font-weight:600; font-size:.9rem; display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:6px; border:none; background:transparent; cursor:pointer; transition:all .2s; }
+.att-tab-btn:hover { color:var(--accent-color); }
+.att-tab-btn.active { background-color:var(--accent-color); color:#fff !important; }
+.att-panel { display:none; }
+.att-panel.active { display:block; }
+
+/* Two-column layout for each panel */
+.att-layout { display:grid; grid-template-columns:320px 1fr; gap:24px; align-items:start; }
+.att-form-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.att-form-card h4 { margin:0 0 20px 0; font-size:.95rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--sidebar-border); }
+.att-table-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.att-table-card h4 { margin:0 0 20px 0; font-size:.95rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--sidebar-border); }
+.att-table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.att-table-header h4 { margin:0; border:none; padding:0; }
+
+.form-label-red { color:#ef4444; font-weight:600; font-size:.85rem; display:block; margin-bottom:6px; }
+.form-label-plain { color:var(--text-secondary); font-size:.85rem; display:block; margin-bottom:6px; }
+.att-form-group { margin-bottom:16px; }
+.btn-att-save { width:100%; padding:11px; background:var(--accent-color); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:.9rem; margin-top:8px; transition:opacity .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-att-save:hover { opacity:.88; }
+.btn-export { padding:8px 16px; background:var(--accent-color); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:.85rem; display:inline-flex; align-items:center; gap:6px; }
+.date-filter-row { display:flex; align-items:center; gap:8px; }
+.date-filter-row input { padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:.85rem; color:var(--text-primary); }
+.btn-icon { width:32px; height:32px; background:var(--accent-color); border:none; border-radius:6px; cursor:pointer; color:#fff; display:inline-flex; align-items:center; justify-content:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="att-tabs">
+  <button class="att-tab-btn active" id="att-btn-form" onclick="switchAttTab('form')">
+    <i class="fa-regular fa-clipboard"></i> Attendance Form
+  </button>
+  <button class="att-tab-btn" id="att-btn-monthly" onclick="switchAttTab('monthly')">
+    <i class="fa-regular fa-calendar"></i> Monthly Attendance
+  </button>
+  <button class="att-tab-btn" id="att-btn-missing" onclick="switchAttTab('missing')">
+    <i class="fa-solid fa-triangle-exclamation"></i> Missing Attendance
+  </button>
+</div>
+
+<!-- ===== TAB 1: Attendance Form ===== -->
+<div id="att-panel-form" class="att-panel active">
+  <div class="att-layout">
+    <!-- Left: Form -->
+    <div class="att-form-card">
+      <h4><i class="fa-regular fa-clipboard" style="color:var(--accent-color);"></i> Record Attendance</h4>
+      <form method="POST" action="{% url 'hrm:attendance' %}">
+        {% csrf_token %}
+        <input type="hidden" name="att_action" value="record">
+        <div class="att-form-group">
+          <label class="form-label-red">Employee <span>*</span></label>
+          <select name="name" class="form-control" required>
+            <option value="" disabled selected>Select Employee...</option>
+            {% for emp in employees %}
+            <option value="{{ emp.name }}">{{ emp.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-red">Date <span>*</span></label>
+          <input type="date" name="date" class="form-control" required>
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-plain">Check-in Time</label>
+          <input type="time" name="check_in" class="form-control">
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-plain">Check-out Time</label>
+          <input type="time" name="check_out" class="form-control">
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-plain">Status</label>
+          <select name="status" class="form-control">
+            <option value="Present">Present</option>
+            <option value="Late">Late</option>
+            <option value="Absent">Absent</option>
+            <option value="Half Day">Half Day</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-att-save">
+          <i class="fa-regular fa-floppy-disk"></i> Save Attendance
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Today's log -->
+    <div class="att-table-card">
+      <div class="att-table-header">
+        <h4><i class="fa-regular fa-calendar-check" style="color:var(--accent-color);"></i> Today's Attendance</h4>
+        <div class="date-filter-row">
+          <input type="date" id="today-date-filter" onchange="filterByDate()">
+          <button class="btn-icon" onclick="filterByDate()"><i class="fa-solid fa-rotate-right" style="font-size:.75rem;"></i></button>
+        </div>
+      </div>
+        <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="today-tbody">
+          {% for log in logs %}
+          <tr class="att-row" data-date="{{ log.date }}">
+            <td><strong>{{ log.name }}</strong></td>
+            <td>{{ log.date }}</td>
+            <td>{{ log.check_in }}</td>
+            <td>{{ log.check_out }}</td>
+            <td>
+              <span class="badge {% if log.status == 'Present' or log.status == 'On Time' %}success{% elif log.status == 'Late' or log.status == 'Half Day' %}warning{% else %}danger{% endif %}">
+                {{ log.status }}
+              </span>
+            </td>
+            <td>
+              {% if log.id %}
+              <form method="POST" action="{% url 'hrm:attendance' %}" style="margin:0;" onsubmit="return confirm('Delete this record?');">
+                {% csrf_token %}
+                <input type="hidden" name="att_action" value="delete">
+                <input type="hidden" name="doc_id" value="{{ log.id }}">
+                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;"><i class="fa-solid fa-trash-can"></i></button>
+              </form>
+              {% else %}--{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-secondary);">No records found for today.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+
+<!-- ===== TAB 2: Monthly Attendance ===== -->
+<div id="att-panel-monthly" class="att-panel">
+  <div class="att-layout">
+    <!-- Left: Filter -->
+    <div class="att-form-card">
+      <h4><i class="fa-solid fa-filter" style="color:var(--accent-color);font-size:.85rem;"></i> Filter Monthly Data</h4>
+      <form id="monthly-filter-form" onsubmit="generateMonthlyReport(event)">
+        <div class="att-form-group">
+          <label class="form-label-red">Select Month <span>*</span></label>
+          <select id="filter-month" class="form-control" required>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-red">Select Year <span>*</span></label>
+          <select id="filter-year" class="form-control" required>
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-att-save">
+          <i class="fa-solid fa-magnifying-glass"></i> Generate Report
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Monthly overview table -->
+    <div class="att-table-card">
+      <div class="att-table-header">
+        <h4><i class="fa-regular fa-calendar" style="color:var(--accent-color);"></i> Monthly Attendance Overview</h4>
+        <button class="btn-export" onclick="exportMonthly()"><i class="fa-solid fa-file-export"></i> Export</button>
+      </div>
+        <table class="data-table" id="monthly-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Present</th>
+            <th>Absent</th>
+            <th>Late</th>
+            <th>Half Day</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-secondary);">Generate report to view data.</td></tr>
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+
+<!-- ===== TAB 3: Missing Attendance ===== -->
+<div id="att-panel-missing" class="att-panel">
+  <div class="att-layout">
+    <!-- Left: Resolve form -->
+    <div class="att-form-card">
+      <h4><i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Resolve Missing Records</h4>
+      <form method="POST" action="{% url 'hrm:attendance' %}">
+        {% csrf_token %}
+        <input type="hidden" name="att_action" value="resolve_missing">
+        <div class="att-form-group">
+          <label class="form-label-red">Employee <span>*</span></label>
+          <input type="text" name="missing_name" class="form-control" placeholder="Select from table..." required>
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-red">Missing Date <span>*</span></label>
+          <input type="date" name="missing_date" class="form-control" required>
+        </div>
+        <div class="att-form-group">
+          <label class="form-label-plain">Corrected Status</label>
+          <select name="corrected_status" class="form-control">
+            <option value="Present">Present</option>
+            <option value="Late">Late</option>
+            <option value="Half Day">Half Day</option>
+            <option value="Absent">Absent</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-att-save">
+          <i class="fa-solid fa-rotate"></i> Update Record
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Missing log -->
+    <div class="att-table-card">
+      <div class="att-table-header">
+        <h4><i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Missing Attendance Log</h4>
+        <div class="date-filter-row">
+          <input type="date" id="missing-date-filter">
+          <button class="btn-icon"><i class="fa-solid fa-rotate-right" style="font-size:.75rem;"></i></button>
+        </div>
+      </div>
+        <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Expected Shift</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in missing_logs %}
+          <tr>
+            <td><strong>{{ log.name }}</strong></td>
+            <td>{{ log.date }}</td>
+            <td>{{ log.shift|default:"09:00 AM - 06:00 PM" }}</td>
+            <td>
+              <button onclick="document.querySelector('[name=missing_name]').value='{{ log.name }}'; document.querySelector('[name=missing_date]').value='{{ log.date }}';" style="background:none;border:none;color:var(--accent-color);cursor:pointer;font-size:.85rem;font-weight:600;">
+                <i class="fa-solid fa-pen-to-square"></i> Resolve
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-secondary);">No missing records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tab switching
+function switchAttTab(tab) {
+  localStorage.setItem('att_active_tab', tab);
+  document.querySelectorAll('.att-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('att-btn-' + tab).classList.add('active');
+  document.querySelectorAll('.att-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('att-panel-' + tab).classList.add('active');
+}
+
+// Filter today's table by date
+function filterByDate() {
+  const d = document.getElementById('today-date-filter').value;
+  document.querySelectorAll('.att-row').forEach(row => {
+    row.style.display = (!d || row.getAttribute('data-date') === d) ? '' : 'none';
+  });
+}
+
+// Generate monthly report from attendance logs
+function generateMonthlyReport(e) {
+  e.preventDefault();
+  const month = parseInt(document.getElementById('filter-month').value);
+  const year = parseInt(document.getElementById('filter-year').value);
+
+  // Collect all rows from today's table and aggregate
+  const rows = document.querySelectorAll('.att-row');
+  const summary = {};
+  rows.forEach(row => {
+    const dateStr = row.getAttribute('data-date');
+    if (!dateStr) return;
+    const d = new Date(dateStr);
+    if (d.getMonth() + 1 !== month || d.getFullYear() !== year) return;
+    const name = row.cells[0].innerText.trim();
+    const status = row.cells[4].innerText.trim();
+    if (!summary[name]) summary[name] = { present:0, absent:0, late:0, halfday:0 };
+    if (status === 'Present' || status === 'On Time') summary[name].present++;
+    else if (status === 'Absent') summary[name].absent++;
+    else if (status === 'Late') summary[name].late++;
+    else if (status === 'Half Day') summary[name].halfday++;
+  });
+
+  const tbody = document.getElementById('monthly-tbody');
+  const keys = Object.keys(summary);
+  if (!keys.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-secondary);">No data found for this period.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = keys.map(n => `
+    <tr>
+      <td><strong>${n}</strong></td>
+      <td><span class="badge success">${summary[n].present}</span></td>
+      <td><span class="badge danger">${summary[n].absent}</span></td>
+      <td><span class="badge warning">${summary[n].late}</span></td>
+      <td><span class="badge">${summary[n].halfday}</span></td>
+    </tr>`).join('');
+}
+
+function exportMonthly() {
+  const rows = [...document.querySelectorAll('#monthly-table tr')];
+  const csv = rows.map(r => [...r.cells].map(c => c.innerText.trim()).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'monthly_attendance.csv';
+  a.click();
+}
+
+initPage();
+function initPage() {
+  const tab = localStorage.getItem('att_active_tab') || 'form';
+  switchAttTab(tab);
+  // Set today's date in filter
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('today-date-filter').value = today;
+}
+
+function editRecord(id) {
+    const data = JSON.parse(document.getElementById(id).textContent);
+    
+    // Check if there is an existing form with a submit button
+    
+    // Find the currently active tab/stage to get the right form
+    let form = null;
+    const activeStage = document.querySelector('.active') || document.body;
+    
+    // Look for form inside active stage first
+    if (activeStage.classList.contains('active')) {
+        form = activeStage.querySelector('form[method="POST"]');
+    }
+    
+    // Fallback if not found
+    if (!form) {
+        const stages = document.querySelectorAll('.active');
+        for (let s of stages) {
+            form = s.querySelector('form[method="POST"]');
+            if (form) break;
+        }
+    }
+    if (!form) form = document.querySelector('form[method="POST"]');
+    if (!form) return;
+
+    
+    // Create or update hidden doc_id input
+    let docInput = form.querySelector('input[name="doc_id"]');
+    if (!docInput) {
+        docInput = document.createElement('input');
+        docInput.type = 'hidden';
+        docInput.name = 'doc_id';
+        form.appendChild(docInput);
+    }
+    docInput.value = id;
+    
+    // Populate fields
+    for (const [key, value] of Object.entries(data)) {
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            field.value = value;
+            if (field.tagName === 'SELECT') {
+                field.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+    
+    // Update button text
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Record';
+        submitBtn.style.backgroundColor = '#f59e0b';
+    }
+    
+    // Scroll to form
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

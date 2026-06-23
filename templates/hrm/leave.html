@@ -1,0 +1,539 @@
+{% extends 'erp_base.html' %}
+{% block title %}Leave Management - Intrex ERP
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.lv-tabs { display:flex; gap:16px; margin-bottom:28px; border-bottom:1px solid var(--sidebar-border); padding-bottom:8px; }
+.lv-tab-btn { color:var(--text-secondary); font-weight:600; font-size:.9rem; display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:6px; border:none; background:transparent; cursor:pointer; transition:all .2s; }
+.lv-tab-btn:hover { color:var(--accent-color); }
+.lv-tab-btn.active { background-color:var(--accent-color); color:#fff !important; }
+.lv-panel { display:none; }
+.lv-panel.active { display:block; }
+
+.lv-layout { display:grid; grid-template-columns:320px 1fr; gap:24px; align-items:start; }
+.lv-form-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.lv-form-card h4 { margin:0 0 20px 0; font-size:.95rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--sidebar-border); }
+.lv-table-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.lv-table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--sidebar-border); }
+.lv-table-header h4 { margin:0; font-size:.95rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+.form-label-red { color:#ef4444; font-weight:600; font-size:.85rem; display:block; margin-bottom:6px; }
+.form-label-plain { color:var(--text-secondary); font-size:.85rem; display:block; margin-bottom:6px; }
+.lv-form-group { margin-bottom:16px; }
+.btn-lv-save { width:100%; padding:11px; background:var(--accent-color); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:.9rem; margin-top:8px; transition:opacity .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-lv-save:hover { opacity:.88; }
+.btn-approve { padding:4px 10px; background:#059669; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:.78rem; font-weight:600; }
+.btn-reject  { padding:4px 10px; background:#dc2626; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:.78rem; font-weight:600; }
+.search-box { padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:.85rem; width:180px; }
+.btn-icon { width:32px; height:32px; background:var(--accent-color); border:none; border-radius:6px; cursor:pointer; color:#fff; display:inline-flex; align-items:center; justify-content:center; }
+
+/* Weekend checkboxes */
+.day-check-list { list-style:none; padding:0; margin:0 0 20px 0; display:flex; flex-direction:column; gap:12px; }
+.day-check-list li { display:flex; align-items:center; gap:10px; font-size:.9rem; color:var(--text-primary); }
+.day-check-list input[type=checkbox] { width:16px; height:16px; accent-color:var(--accent-color); }
+
+/* Weekend setup right card */
+.weekend-setup-info { background:#f8fafc; border:1px solid var(--sidebar-border); border-radius:12px; padding:48px 32px; text-align:center; }
+.weekend-setup-info .ws-icon { font-size:2.5rem; color:#94a3b8; margin-bottom:16px; }
+.weekend-setup-info h3 { margin:0 0 12px 0; font-size:1.1rem; font-weight:700; color:var(--text-primary); }
+.weekend-setup-info p { margin:0 0 12px 0; color:var(--text-secondary); font-size:.9rem; }
+.weekend-setup-info .ws-note { display:flex; align-items:flex-start; gap:6px; justify-content:center; color:var(--text-secondary); font-size:.82rem; }
+
+/* Leave Calendar */
+.cal-shell { display:grid; grid-template-columns:1fr 280px; gap:24px; align-items:start; }
+.cal-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:24px; }
+.cal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+.cal-header h3 { margin:0; font-size:1.1rem; font-weight:700; color:var(--text-primary); }
+.cal-nav-btn { width:34px; height:34px; border:1px solid var(--sidebar-border); background:#fff; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); transition:all .2s; }
+.cal-nav-btn:hover { background:var(--accent-color); color:#fff; border-color:var(--accent-color); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.cal-day-name { text-align:center; font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-secondary); padding:8px 0; }
+.cal-cell { min-height:62px; border-radius:8px; padding:6px 8px; font-size:.82rem; position:relative; border:1px solid transparent; transition:all .2s; cursor:default; }
+.cal-cell:hover { border-color:var(--sidebar-border); }
+.cal-cell.empty { background:transparent; border:none; }
+.cal-cell.weekend { background:rgba(239,68,68,.08); }
+.cal-cell.today { border:2px solid var(--accent-color) !important; }
+.cal-cell .day-num { font-weight:600; color:var(--text-primary); font-size:.85rem; }
+.cal-cell.weekend .day-num { color:#ef4444; }
+.cal-cell.today .day-num { color:var(--accent-color); }
+.cal-holiday-dot { margin-top:4px; }
+.cal-holiday-chip { display:inline-block; background:rgba(33,92,92,.1); color:var(--accent-color); border-radius:4px; font-size:.65rem; font-weight:700; padding:2px 5px; max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.cal-legend { display:flex; gap:16px; margin-top:16px; flex-wrap:wrap; }
+.cal-legend-item { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-secondary); }
+.cal-legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+.cal-side-card { background:#fff; border:1px solid var(--sidebar-border); border-radius:12px; padding:20px; }
+.cal-side-card h4 { margin:0 0 16px 0; font-size:.9rem; font-weight:700; color:var(--text-primary); border-bottom:1px solid var(--sidebar-border); padding-bottom:10px; }
+.cal-event-item { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--sidebar-border); }
+.cal-event-item:last-child { border-bottom:none; }
+.cal-event-date { width:36px; height:36px; border-radius:8px; background:var(--accent-color); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+.cal-event-date .ev-day { font-size:.9rem; font-weight:800; line-height:1; }
+.cal-event-date .ev-mon { font-size:.6rem; font-weight:600; text-transform:uppercase; }
+.cal-event-info .ev-name { font-weight:600; font-size:.82rem; color:var(--text-primary); }
+.cal-event-info .ev-type { font-size:.72rem; color:var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="lv-tabs">
+  <button class="lv-tab-btn active" id="lv-btn-calendar" onclick="switchLvTab('calendar')">
+    <i class="fa-regular fa-calendar-days"></i> Leave Calendar
+  </button>
+  <button class="lv-tab-btn" id="lv-btn-holidays" onclick="switchLvTab('holidays')">
+    <i class="fa-regular fa-calendar"></i> Holidays
+  </button>
+  <button class="lv-tab-btn" id="lv-btn-application" onclick="switchLvTab('application')">
+    <i class="fa-regular fa-file-lines"></i> Leave Application
+  </button>
+  <button class="lv-tab-btn" id="lv-btn-weekend" onclick="switchLvTab('weekend')">
+    <i class="fa-solid fa-gear"></i> Weekend Setup
+  </button>
+</div>
+
+<!-- ===== TAB 0: Leave Calendar ===== -->
+<div id="lv-panel-calendar" class="lv-panel">
+  <div class="cal-shell">
+    <!-- Main Calendar -->
+    <div class="cal-card">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="changeCalMonth(-1)"><i class="fa-solid fa-chevron-left" style="font-size:.75rem;"></i></button>
+        <h3 id="cal-title">Month Year</h3>
+        <button class="cal-nav-btn" onclick="changeCalMonth(1)"><i class="fa-solid fa-chevron-right" style="font-size:.75rem;"></i></button>
+      </div>
+      <div class="cal-grid" id="cal-grid">
+        <div class="cal-day-name">Sat</div>
+        <div class="cal-day-name">Sun</div>
+        <div class="cal-day-name">Mon</div>
+        <div class="cal-day-name">Tue</div>
+        <div class="cal-day-name">Wed</div>
+        <div class="cal-day-name">Thu</div>
+        <div class="cal-day-name">Fri</div>
+      </div>
+      <div class="cal-legend">
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);"></div> Weekend</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(33,92,92,.1);border:2px solid var(--accent-color);"></div> Today</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(33,92,92,.1);position:relative;overflow:hidden;"><span style="position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--accent-color);"></span></div> Public Holiday</div>
+      </div>
+    </div>
+    <!-- Side: Upcoming Events -->
+    <div class="cal-side-card">
+      <h4><i class="fa-solid fa-list-ul" style="color:var(--accent-color);"></i> Upcoming Holidays</h4>
+      <div id="cal-upcoming"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 1: Holidays ===== -->
+<div id="lv-panel-holidays" class="lv-panel active">
+  <div class="lv-layout">
+    <div class="lv-form-card">
+      <h4><i class="fa-regular fa-calendar-plus" style="color:var(--accent-color);"></i> Add Holiday</h4>
+      <form method="POST" action="{% url 'hrm:leave' %}">
+        {% csrf_token %}
+        <input type="hidden" name="lv_action" value="add_holiday">
+        <div class="lv-form-group">
+          <label class="form-label-red">Holiday Name <span>*</span></label>
+          <input type="text" name="holiday_name" class="form-control" placeholder="e.g. Eid-ul-Fitr" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">From Date <span>*</span></label>
+          <input type="date" name="from_date" class="form-control" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">To Date <span>*</span></label>
+          <input type="date" name="to_date" class="form-control" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Type <span>*</span></label>
+          <select name="holiday_type" class="form-control">
+            <option value="Public">Public</option>
+            <option value="National">National</option>
+            <option value="Optional">Optional</option>
+            <option value="Religious">Religious</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-lv-save">
+          <i class="fa-regular fa-floppy-disk"></i> Save Holiday
+        </button>
+      </form>
+    </div>
+
+    <div class="lv-table-card">
+      <div class="lv-table-header">
+        <h4><i class="fa-regular fa-calendar" style="color:var(--accent-color);"></i> Holidays Directory</h4>
+        <button class="btn-icon" onclick="window.location.reload();"><i class="fa-solid fa-rotate-right" style="font-size:.75rem;"></i></button>
+      </div>
+        <table class="data-table">
+        <thead>
+          <tr>
+            <th>Holiday Name</th>
+            <th>Date Range</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="holidays-tbody">
+          {% for h in holidays %}
+          <tr>
+            <td><strong>{{ h.holiday_name }}</strong></td>
+            <td>
+              {{ h.from_date }}
+              {% if h.from_date != h.to_date %}
+                <i class="fa-solid fa-arrow-right" style="font-size: 0.7rem; margin: 0 4px; color: var(--text-secondary);"></i>
+                {{ h.to_date }}
+              {% endif %}
+            </td>
+            <td><span class="badge">{{ h.type }}</span></td>
+            <td>
+              {% if h.id %}
+              <form method="POST" action="{% url 'hrm:leave' %}" style="margin:0;" onsubmit="return confirm('Delete this holiday?');">
+                {% csrf_token %}
+                <input type="hidden" name="lv_action" value="delete_holiday">
+                <input type="hidden" name="doc_id" value="{{ h.id }}">
+                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;"><i class="fa-solid fa-trash-can"></i></button>
+              </form>
+              {% else %}--{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-secondary);">No holidays found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+
+<!-- ===== TAB 2: Leave Application ===== -->
+<div id="lv-panel-application" class="lv-panel">
+  <div class="lv-layout">
+    <div class="lv-form-card">
+      <h4><i class="fa-regular fa-file-lines" style="color:var(--accent-color);"></i> Apply Leave</h4>
+      <form method="POST" action="{% url 'hrm:leave' %}">
+        {% csrf_token %}
+        <input type="hidden" name="lv_action" value="apply_leave">
+        <div class="lv-form-group">
+          <label class="form-label-red">Employee <span>*</span></label>
+          <select name="emp_name" class="form-control" required>
+            <option value="" disabled selected>Select Employee...</option>
+            {% for emp in employees %}
+            <option value="{{ emp.name }}">{{ emp.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">Leave Type <span>*</span></label>
+          <select name="leave_type" class="form-control" required>
+            <option value="Annual Leave">Annual Leave</option>
+            <option value="Sick Leave">Sick Leave</option>
+            <option value="Casual Leave">Casual Leave</option>
+            <option value="Maternity Leave">Maternity Leave</option>
+            <option value="Paternity Leave">Paternity Leave</option>
+            <option value="Unpaid Leave">Unpaid Leave</option>
+          </select>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">From Date <span>*</span></label>
+          <input type="date" name="from_date" class="form-control" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-red">To Date <span>*</span></label>
+          <input type="date" name="to_date" class="form-control" required>
+        </div>
+        <div class="lv-form-group">
+          <label class="form-label-plain">Reason</label>
+          <textarea name="reason" class="form-control" style="height:80px;resize:none;font-family:inherit;" placeholder="Leave reason..."></textarea>
+        </div>
+        <button type="submit" class="btn-lv-save">
+          <i class="fa-regular fa-paper-plane"></i> Submit Application
+        </button>
+      </form>
+    </div>
+
+    <div class="lv-table-card">
+      <div class="lv-table-header">
+        <h4><i class="fa-regular fa-file-lines" style="color:var(--accent-color);"></i> Leave Applications Directory</h4>
+        <input type="text" id="leave-search" onkeyup="filterLeaves()" class="search-box" placeholder="Search employee...">
+      </div>
+        <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Leave Type</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leaves-tbody">
+          {% for lv in leaves %}
+          <tr class="leave-row" data-name="{{ lv.name }}">
+            <td><strong>{{ lv.name }}</strong></td>
+            <td>{{ lv.type }}</td>
+            <td>{{ lv.duration }}</td>
+            <td>
+              <span class="badge {% if lv.status == 'Approved' %}success{% elif lv.status == 'Pending' %}warning{% else %}danger{% endif %}">
+                {{ lv.status }}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                {% if lv.status == 'Pending' and lv.id %}
+                <form method="POST" action="{% url 'hrm:leave' %}" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="lv_action" value="Approved">
+                  <input type="hidden" name="doc_id" value="{{ lv.id }}">
+                  <button type="submit" class="btn-approve">Approve</button>
+                </form>
+                <form method="POST" action="{% url 'hrm:leave' %}" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="lv_action" value="Rejected">
+                  <input type="hidden" name="doc_id" value="{{ lv.id }}">
+                  <button type="submit" class="btn-reject">Reject</button>
+                </form>
+                {% else %}
+                <span style="font-size:.82rem;color:var(--text-secondary);">Processed</span>
+                {% endif %}
+                {% if lv.id %}
+                <form method="POST" action="{% url 'hrm:leave' %}" style="margin:0;" onsubmit="return confirm('Delete this record?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="lv_action" value="delete_leave">
+                  <input type="hidden" name="doc_id" value="{{ lv.id }}">
+                  <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;"><i class="fa-solid fa-trash-can"></i></button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-secondary);">No leave applications found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+</div>
+
+<!-- ===== TAB 3: Weekend Setup ===== -->
+<div id="lv-panel-weekend" class="lv-panel">
+  <div class="lv-layout">
+    <div class="lv-form-card">
+      <h4><i class="fa-solid fa-gear" style="color:var(--accent-color);"></i> Define Weekend</h4>
+      <form method="POST" action="{% url 'hrm:leave' %}">
+        {% csrf_token %}
+        <input type="hidden" name="lv_action" value="save_weekend">
+        <div class="lv-form-group">
+          <label class="form-label-red">Select Weekend Days <span>*</span></label>
+          <ul class="day-check-list">
+            {% for day in all_days %}
+            <li>
+              <input type="checkbox" name="weekend_days" value="{{ day }}" id="day-{{ day }}"
+                {% if day in weekend_days %}checked{% endif %}>
+              <label for="day-{{ day }}">{{ day }}</label>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <button type="submit" class="btn-lv-save">
+          <i class="fa-regular fa-floppy-disk"></i> Save Setup
+        </button>
+      </form>
+    </div>
+
+    <div class="lv-table-card">
+      <h4 style="border-bottom:1px solid var(--sidebar-border);padding-bottom:12px;margin-bottom:20px;"><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> Current Setup</h4>
+      <div class="weekend-setup-info">
+        <div class="ws-icon"><i class="fa-regular fa-calendar-days"></i></div>
+        <h3>Active Weekend Policy</h3>
+        <p>The system considers <strong>{{ weekend_days|join:", " }}</strong> as weekends.</p>
+        <div class="ws-note">
+          <i class="fa-solid fa-lightbulb" style="color:#f59e0b;margin-top:2px;"></i>
+          <span>Employees will automatically be marked "Off" on these days.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ holidays|json_script:"holidays-data" }}
+{{ weekend_days|json_script:"weekend-days-data" }}
+
+<script>
+// Pass data from Django to JS
+const rawHolidays = JSON.parse(document.getElementById('holidays-data').textContent);
+const HOLIDAYS = rawHolidays.map(h => ({
+  name: h.holiday_name,
+  from_date: h.from_date || h.date,
+  to_date: h.to_date || h.date,
+  type: h.type
+}));
+const WEEKEND_DAYS = JSON.parse(document.getElementById('weekend-days-data').textContent);
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+let calYear, calMonth;
+
+function renderCalendar(year, month) {
+  calYear = year; calMonth = month;
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent = months[month] + ' ' + year;
+
+  const grid = document.getElementById('cal-grid');
+  // Remove all cells (keep 7 day-name headers)
+  const headers = [...grid.querySelectorAll('.cal-day-name')];
+  grid.innerHTML = '';
+  headers.forEach(h => grid.appendChild(h));
+
+  const firstDay = (new Date(year, month, 1).getDay() + 1) % 7; // Sat=0, Sun=1, ... Fri=6
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+
+  // Empty cells
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-cell empty';
+    grid.appendChild(empty);
+  }
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month, d);
+    const dayName = DAY_NAMES[dateObj.getDay()];
+    const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const isWeekend = WEEKEND_DAYS.includes(dayName);
+    const isToday = (year === today.getFullYear() && month === today.getMonth() && d === today.getDate());
+    const dayHolidays = HOLIDAYS.filter(h => dateStr >= h.from_date && dateStr <= h.to_date);
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (isWeekend ? ' weekend' : '') + (isToday ? ' today' : '');
+
+    let inner = `<div class="day-num">${d}</div>`;
+    dayHolidays.forEach(h => {
+      inner += `<div class="cal-holiday-dot"><span class="cal-holiday-chip" title="${h.name}">${h.name}</span></div>`;
+    });
+    cell.innerHTML = inner;
+    grid.appendChild(cell);
+  }
+
+  renderUpcoming();
+}
+
+function renderUpcoming() {
+  const now = new Date();
+  const todayStr = [now.getFullYear(), String(now.getMonth()+1).padStart(2,'0'), String(now.getDate()).padStart(2,'0')].join('-');
+  const upcoming = HOLIDAYS
+    .map(h => ({ ...h, _d: new Date(h.from_date) }))
+    .filter(h => h.to_date >= todayStr)
+    .sort((a, b) => a._d - b._d)
+    .slice(0, 6);
+
+  const container = document.getElementById('cal-upcoming');
+  if (!upcoming.length) {
+    container.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;text-align:center;padding:20px 0;">No upcoming holidays.</p>';
+    return;
+  }
+  const months3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  container.innerHTML = upcoming.map(h => `
+    <div class="cal-event-item">
+      <div class="cal-event-date">
+        <span class="ev-day">${h._d.getDate()}</span>
+        <span class="ev-mon">${months3[h._d.getMonth()]}</span>
+      </div>
+      <div class="cal-event-info">
+        <div class="ev-name">${h.name}</div>
+        <div class="ev-type">${h.type} Holiday</div>
+      </div>
+    </div>`).join('');
+}
+
+function changeCalMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar(calYear, calMonth);
+}
+
+function switchLvTab(tab) {
+  localStorage.setItem('lv_active_tab', tab);
+  document.querySelectorAll('.lv-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('lv-btn-' + tab).classList.add('active');
+  document.querySelectorAll('.lv-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('lv-panel-' + tab).classList.add('active');
+}
+
+function filterLeaves() {
+  const q = document.getElementById('leave-search').value.toLowerCase();
+  document.querySelectorAll('.leave-row').forEach(row => {
+    const name = row.getAttribute('data-name').toLowerCase();
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+initPage();
+function initPage() {
+  const now = new Date();
+  renderCalendar(now.getFullYear(), now.getMonth());
+  const tab = localStorage.getItem('lv_active_tab') || 'calendar';
+  switchLvTab(tab);
+}
+
+function editRecord(id) {
+    const data = JSON.parse(document.getElementById(id).textContent);
+    
+    // Check if there is an existing form with a submit button
+    
+    // Find the currently active tab/stage to get the right form
+    let form = null;
+    const activeStage = document.querySelector('.active') || document.body;
+    
+    // Look for form inside active stage first
+    if (activeStage.classList.contains('active')) {
+        form = activeStage.querySelector('form[method="POST"]');
+    }
+    
+    // Fallback if not found
+    if (!form) {
+        const stages = document.querySelectorAll('.active');
+        for (let s of stages) {
+            form = s.querySelector('form[method="POST"]');
+            if (form) break;
+        }
+    }
+    if (!form) form = document.querySelector('form[method="POST"]');
+    if (!form) return;
+
+    
+    // Create or update hidden doc_id input
+    let docInput = form.querySelector('input[name="doc_id"]');
+    if (!docInput) {
+        docInput = document.createElement('input');
+        docInput.type = 'hidden';
+        docInput.name = 'doc_id';
+        form.appendChild(docInput);
+    }
+    docInput.value = id;
+    
+    // Populate fields
+    for (const [key, value] of Object.entries(data)) {
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            field.value = value;
+            if (field.tagName === 'SELECT') {
+                field.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+    
+    // Update button text
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Record';
+        submitBtn.style.backgroundColor = '#f59e0b';
+    }
+    
+    // Scroll to form
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}
