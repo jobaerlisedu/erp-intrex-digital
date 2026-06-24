@@ -10,6 +10,8 @@ from .models import log_action, get_client_ip, AuditLog
 # ─────────────────────────────────────────────
 @staff_required
 def user_list(request):
+    from .auth_backend import sync_users_from_firestore
+    sync_users_from_firestore()
     users = User.objects.prefetch_related('groups').order_by('-date_joined')
 
     # Annotate each user with their accessible module names

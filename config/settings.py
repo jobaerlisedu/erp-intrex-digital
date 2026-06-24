@@ -126,10 +126,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # Used by collectstatic for deployment
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Authentication Settings
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'hrm:index'
 LOGOUT_REDIRECT_URL = 'frontend:index'
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.auth_backend.FirestoreBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # CSRF Trusted Origins Configuration
 CSRF_TRUSTED_ORIGINS = [
