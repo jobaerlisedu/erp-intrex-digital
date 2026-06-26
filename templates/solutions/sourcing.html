@@ -1,0 +1,228 @@
+{% extends 'erp_base.html' %}
+{% block title %}Project Sourcing - Intrex ERP{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Project-Based Sourcing & Requisitions</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Log Requisition
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-cart-shopping"></i> Sourcing Requisitions Registry
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Log Requisition Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Log Project Phase Material Requisition
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'solutions:project_sourcing' %}" id="requisitionForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_requisition">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label>Select Project <span class="asterisk">*</span></label>
+                <select name="project_id" id="project_id" class="form-control" required onchange="updatePhaseOptions()">
+                    <option value="" disabled selected>Choose Project...</option>
+                    {% for proj in projects %}
+                    <option value="{{ proj.id }}">{{ proj.project_code }} - {{ proj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Select Project Phase / Milestone <span class="asterisk">*</span></label>
+                <select name="phase_id" id="phase_id" class="form-control" required>
+                    <option value="" disabled selected>Select Project First...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Item Name / Description <span class="asterisk">*</span></label>
+                <input type="text" name="item_name" id="item_name" class="form-control" required placeholder="e.g. Cisco Catalyst 9300 Switch">
+            </div>
+
+            <div class="form-group">
+                <label>Quantity <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="quantity" id="quantity" class="form-control" required placeholder="1.00">
+            </div>
+
+            <div class="form-group">
+                <label>Estimated Total Cost ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="estimated_cost" id="estimated_cost" class="form-control" required placeholder="0.00">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Save Requisition
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Requisitions Registry Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-cart-shopping" style="color: var(--accent-color);"></i>
+            Sourcing Requisition Registry
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Project Code</th>
+                <th>Phase Name</th>
+                <th>Item / Description</th>
+                <th>Qty</th>
+                <th>Estimated Cost</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requisitions %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ req.project_code }}</td>
+                <td><strong style="color: var(--text-primary);">{{ req.phase_name }}</strong></td>
+                <td>{{ req.item_name }}</td>
+                <td>{{ req.quantity|floatformat:1 }}</td>
+                <td style="font-weight: 700;">${{ req.estimated_cost|floatformat:2 }}</td>
+                <td>
+                    <span class="badge {% if req.status == 'Approved' %}success{% else %}warning{% endif %}">
+                        {{ req.status }}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-group">
+                        {% if req.status == 'Draft' %}
+                        <form method="POST" action="{% url 'solutions:project_sourcing' %}" style="margin:0;" onsubmit="return confirm('Dispatch this requisition to central procurement system?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="dispatch_to_inventory">
+                            <input type="hidden" name="doc_id" value="{{ req.id }}">
+                            <button type="submit" class="btn-submit" style="padding: 6px 12px; font-size: 0.78rem; background-color: #10b981; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-truck-ramp-box"></i> Dispatch
+                            </button>
+                        </form>
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ req.id }}')" title="Edit Requisition"><i class="fa-solid fa-pen-to-square"></i></button>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'solutions:project_sourcing' %}" style="margin:0;" onsubmit="return confirm('Remove this requisition?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_requisition">
+                            <input type="hidden" name="doc_id" value="{{ req.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Requisition"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">No project requisitions recorded.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const requisitionsDb = JSON.parse('{{ requisitions_json|escapejs }}');
+    
+    // Inject phases database
+    {% if phases %}
+    const phasesDb = JSON.parse('{{ phases|json_script:"phases-data" }}' ? document.getElementById('phases-data').textContent : '[]');
+    {% else %}
+    const phasesDb = [];
+    {% endif %}
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function updatePhaseOptions() {
+        const projSelect = document.getElementById('project_id');
+        const phaseSelect = document.getElementById('phase_id');
+        const selectedProjId = projSelect.value;
+
+        // Clear existing options
+        phaseSelect.innerHTML = '<option value="" disabled selected>Select Phase...</option>';
+
+        // Filter and add new options
+        const filteredPhases = phasesDb.filter(ph => ph.project_id === selectedProjId);
+        filteredPhases.forEach(ph => {
+            const opt = document.createElement('option');
+            opt.value = ph.id;
+            opt.innerText = `${ph.phase_name} (Budget: $${ph.budget_allocation.toFixed(2)})`;
+            phaseSelect.appendChild(opt);
+        });
+    }
+
+    function editRecord(id) {
+        const data = requisitionsDb.find(r => r.id === id);
+        if (!data) return;
+
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('project_id').value = data.project_id || '';
+        
+        // Update phases list dynamically based on project
+        updatePhaseOptions();
+        document.getElementById('phase_id').value = data.phase_id || '';
+
+        document.getElementById('item_name').value = data.item_name || '';
+        document.getElementById('quantity').value = data.quantity || '1.00';
+        document.getElementById('estimated_cost').value = data.estimated_cost || '0.00';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Project Requisition';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Requisition';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('requisitionForm').reset();
+        document.getElementById('phase_id').innerHTML = '<option value="" disabled selected>Select Project First...</option>';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Log Project Phase Material Requisition';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Save Requisition';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

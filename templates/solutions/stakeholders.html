@@ -1,0 +1,188 @@
+{% extends 'erp_base.html' %}
+{% block title %}Stakeholders Directory - Intrex ERP{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Client Stakeholders Directory</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Register Stakeholder
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-address-book"></i> Stakeholders Directory
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Register Stakeholder Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Register Client Stakeholder Contact
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'solutions:client_stakeholders' %}" id="stakeholderForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_stakeholder">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label>Link Project Scope <span class="asterisk">*</span></label>
+                <select name="project_id" id="project_id" class="form-control" required>
+                    <option value="" disabled selected>Choose Project...</option>
+                    {% for proj in projects %}
+                    <option value="{{ proj.id }}">{{ proj.project_code }} - {{ proj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Contact Full Name <span class="asterisk">*</span></label>
+                <input type="text" name="contact_name" id="contact_name" class="form-control" required placeholder="e.g. Robert Downey">
+            </div>
+
+            <div class="form-group">
+                <label>Email Address <span class="asterisk">*</span></label>
+                <input type="email" name="email" id="email" class="form-control" required placeholder="e.g. robert@nexus.com">
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number <span class="asterisk">*</span></label>
+                <input type="text" name="phone" id="phone" class="form-control" required placeholder="e.g. +1-202-555-0143">
+            </div>
+
+            <div class="form-group">
+                <label>Communication Role / Focus <span class="asterisk">*</span></label>
+                <select name="role" id="role" class="form-control" required>
+                    <option value="Primary Client Contact" selected>Primary Client Contact</option>
+                    <option value="Technical Sponsor">Technical Sponsor</option>
+                    <option value="Billing Contact">Billing Contact</option>
+                    <option value="Internal Lead">Internal Lead</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Register Contact
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Stakeholders Directory Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-address-book" style="color: var(--accent-color);"></i>
+            Stakeholder Directory Records
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Project Code</th>
+                <th>Contact Name</th>
+                <th>Email Address</th>
+                <th>Phone Number</th>
+                <th>Role Designation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in stakeholders %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ s.project_code }}</td>
+                <td><strong style="color: var(--text-primary);">{{ s.contact_name }}</strong></td>
+                <td><a href="mailto:{{ s.email }}" style="color: var(--text-primary);">{{ s.email }}</a></td>
+                <td>{{ s.phone }}</td>
+                <td>
+                    <span class="badge warning" style="text-transform: uppercase;">
+                        {{ s.role }}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ s.id }}')" title="Edit Stakeholder"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'solutions:client_stakeholders' %}" style="margin:0;" onsubmit="return confirm('Remove stakeholder contact card?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_stakeholder">
+                            <input type="hidden" name="doc_id" value="{{ s.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Stakeholder"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-secondary);">No stakeholders recorded.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const stakeholdersDb = JSON.parse('{{ stakeholders_json|escapejs }}');
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = stakeholdersDb.find(s => s.id === id);
+        if (!data) return;
+
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('project_id').value = data.project_id || '';
+        document.getElementById('contact_name').value = data.contact_name || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('phone').value = data.phone || '';
+        document.getElementById('role').value = data.role || 'Primary Client Contact';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Stakeholder Contact';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Contact';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('stakeholderForm').reset();
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Register Client Stakeholder Contact';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Register Contact';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

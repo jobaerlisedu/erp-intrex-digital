@@ -1,0 +1,204 @@
+{% extends 'erp_base.html' %}
+{% block title %}Meeting Scheduler - Intrex ERP{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Project Kickoff & Technical Review Scheduler</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Schedule Meeting
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-video"></i> Scheduled Meetings
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Schedule Meeting Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Schedule Project Conference Call
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'solutions:meeting_scheduler' %}" id="meetingForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_meeting">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label>Link Project Scope <span class="asterisk">*</span></label>
+                <select name="project_id" id="project_id" class="form-control" required>
+                    <option value="" disabled selected>Choose Project...</option>
+                    {% for proj in projects %}
+                    <option value="{{ proj.id }}">{{ proj.project_code }} - {{ proj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Meeting Title <span class="asterisk">*</span></label>
+                <input type="text" name="title" id="title" class="form-control" required placeholder="e.g. Technical Kickoff Review">
+            </div>
+
+            <div class="form-group">
+                <label>Date <span class="asterisk">*</span></label>
+                <input type="date" name="meeting_date" id="meeting_date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Start Time <span class="asterisk">*</span></label>
+                <input type="time" name="start_time" id="start_time" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Video Conference Invite Link</label>
+                <input type="url" name="video_link" id="video_link" class="form-control" placeholder="https://meet.google.com/abc-defg-hij">
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Agenda / Scope Details</label>
+                <textarea name="agenda" id="agenda" class="form-control" style="height:80px; resize:none; font-family:inherit;" placeholder="Specify deliverables, discussions..."></textarea>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Schedule Meeting
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Scheduled Meetings Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-video" style="color: var(--accent-color);"></i>
+            Conference Calls Schedule Calendar
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Project Code</th>
+                <th>Meeting Title</th>
+                <th>Date & Time</th>
+                <th>Video Conference</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for meet in meetings %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ meet.project_code }}</td>
+                <td>
+                    <strong style="color: var(--text-primary);">{{ meet.title }}</strong>
+                    {% if meet.agenda %}
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Agenda: {{ meet.agenda|truncatechars:50 }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <div>{{ meet.meeting_date }}</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;"><i class="fa-regular fa-clock"></i> {{ meet.start_time }}</div>
+                </td>
+                <td>
+                    {% if meet.video_link %}
+                    <a href="{{ meet.video_link }}" target="_blank" class="btn-submit" style="padding: 6px 12px; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-video"></i> Join Conference
+                    </a>
+                    {% else %}
+                    <span style="color: var(--text-secondary); font-style: italic;">No Link Added</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ meet.id }}')" title="Edit Meeting"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'solutions:meeting_scheduler' %}" style="margin:0;" onsubmit="return confirm('Cancel conference schedule?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_meeting">
+                            <input type="hidden" name="doc_id" value="{{ meet.id }}">
+                            <button type="submit" class="btn-action delete" title="Cancel Meeting"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 48px; color: var(--text-secondary);">No project meetings scheduled.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const meetingsDb = JSON.parse('{{ meetings_json|escapejs }}');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('meeting_date').value = new Date().toISOString().substring(0, 10);
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = meetingsDb.find(m => m.id === id);
+        if (!data) return;
+
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('project_id').value = data.project_id || '';
+        document.getElementById('title').value = data.title || '';
+        document.getElementById('meeting_date').value = data.meeting_date || '';
+        document.getElementById('start_time').value = data.start_time || '';
+        document.getElementById('video_link').value = data.video_link || '';
+        document.getElementById('agenda').value = data.agenda || '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Meeting Details';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Schedule';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('meetingForm').reset();
+        document.getElementById('meeting_date').value = new Date().toISOString().substring(0, 10);
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Schedule Project Conference Call';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Schedule Meeting';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

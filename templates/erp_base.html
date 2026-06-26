@@ -710,11 +710,37 @@
             </li>
             {% endif %}
             {% if 'solutions' in user_modules %}
-            <li>
-                <a href="{% url 'solutions:index' %}" class="nav-link {% if request.resolver_match.namespace == 'solutions' %}active{% endif %}">
-                    <i class="fa-solid fa-lightbulb"></i>
-                    <span>Solutions</span>
+            <li class="nav-item-dropdown {% if request.resolver_match.namespace == 'solutions' %}active open{% endif %}">
+                <a href="#" class="nav-link dropdown-toggle" onclick="toggleDropdown(event, 'solutions-dropdown')">
+                    <span style="display: flex; align-items: center; gap: 14px;">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>Solutions & Projects</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down dropdown-caret"></i>
                 </a>
+                <ul id="solutions-dropdown" class="submenu-links {% if request.resolver_match.namespace == 'solutions' %}show{% endif %}">
+                    <li>
+                        <a href="{% url 'solutions:index' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'index' %}active{% endif %}">Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'solutions:projects_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'projects_list' %}active{% endif %}">Projects Scoping</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'solutions:kanban_board' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'kanban_board' %}active{% endif %}">Kanban Board</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'solutions:project_sourcing' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'project_sourcing' %}active{% endif %}">Project Sourcing</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'solutions:licensing_assets' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'licensing_assets' %}active{% endif %}">Licensing & Assets</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'solutions:client_stakeholders' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'client_stakeholders' %}active{% endif %}">Client Stakeholders</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'solutions:meeting_scheduler' %}" class="submenu-link {% if request.resolver_match.namespace == 'solutions' and request.resolver_match.url_name == 'meeting_scheduler' %}active{% endif %}">Meeting Scheduler</a>
+                    </li>
+                </ul>
             </li>
             {% endif %}
             <!-- Training Dropdown -->
