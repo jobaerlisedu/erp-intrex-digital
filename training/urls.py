@@ -23,5 +23,4 @@ urlpatterns = [
     path('certificates/', views.certificates, name='certificates'),
     path('job-placement/', views.job_placement, name='job_placement'),
     path('reports/', views.reports, name='reports'),
-    path('system-audit-logs/', views.system_audit_logs, name='system_audit_logs'),
 ]

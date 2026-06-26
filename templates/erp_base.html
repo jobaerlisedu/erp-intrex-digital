@@ -778,6 +778,7 @@
                     <i class="fa-solid fa-chevron-down dropdown-caret"></i>
                 </a>
                 <ul id="training-dropdown" class="submenu-links {% if request.resolver_match.namespace == 'training' %}show{% endif %}">
+                    <li style="padding: 8px 16px 4px; font-size: 0.75rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.5px;">Lobby & Admissions</li>
                     <li>
                         <a href="{% url 'training:overview' %}" class="submenu-link {% if request.resolver_match.url_name == 'overview' %}active{% endif %}">
                             <i class="fa-solid fa-chart-simple"></i>
@@ -791,29 +792,19 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'training:employee_database' %}" class="submenu-link {% if request.resolver_match.url_name == 'employee_database' %}active{% endif %}">
-                            <i class="fa-solid fa-address-card"></i>
-                            <span>Employee Database</span>
+                        <a href="{% url 'training:sales_management' %}" class="submenu-link {% if request.resolver_match.url_name == 'sales_management' %}active{% endif %}">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Sales Management</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'training:trainer_database' %}" class="submenu-link {% if request.resolver_match.url_name == 'trainer_database' %}active{% endif %}">
-                            <i class="fa-solid fa-chalkboard-user"></i>
-                            <span>Trainer Database</span>
+                        <a href="{% url 'training:student_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}">
+                            <i class="fa-solid fa-user-graduate"></i>
+                            <span>Student List</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{% url 'training:contact_directory' %}" class="submenu-link {% if request.resolver_match.url_name == 'contact_directory' %}active{% endif %}">
-                            <i class="fa-solid fa-address-book"></i>
-                            <span>Contact Directory</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'training:brand_ambassadors' %}" class="submenu-link {% if request.resolver_match.url_name == 'brand_ambassadors' %}active{% endif %}">
-                            <i class="fa-solid fa-bullhorn"></i>
-                            <span>Brand Ambassadors</span>
-                        </a>
-                    </li>
+
+                    <li style="padding: 12px 16px 4px; font-size: 0.75rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--sidebar-border);">Academic Operations</li>
                     <li>
                         <a href="{% url 'training:course_creation' %}" class="submenu-link {% if request.resolver_match.url_name == 'course_creation' %}active{% endif %}">
                             <i class="fa-solid fa-book-open"></i>
@@ -832,36 +823,8 @@
                             <span>Class Calendar</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{% url 'training:student_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}">
-                            <i class="fa-solid fa-user-graduate"></i>
-                            <span>Student List</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'training:installment_plan' %}" class="submenu-link {% if request.resolver_match.url_name == 'installment_plan' %}active{% endif %}">
-                            <i class="fa-solid fa-credit-card"></i>
-                            <span>Installment Plan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'training:revenue_tracker' %}" class="submenu-link {% if request.resolver_match.url_name == 'revenue_tracker' %}active{% endif %}">
-                            <i class="fa-solid fa-money-bill-trend-up"></i>
-                            <span>Revenue Tracker</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'training:expense_tracker' %}" class="submenu-link {% if request.resolver_match.url_name == 'expense_tracker' %}active{% endif %}">
-                            <i class="fa-solid fa-wallet"></i>
-                            <span>Expense Tracker</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'training:sales_management' %}" class="submenu-link {% if request.resolver_match.url_name == 'sales_management' %}active{% endif %}">
-                            <i class="fa-solid fa-chart-line"></i>
-                            <span>Sales Management</span>
-                        </a>
-                    </li>
+
+                    <li style="padding: 12px 16px 4px; font-size: 0.75rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--sidebar-border);">Evaluation & Completion</li>
                     <li>
                         <a href="{% url 'training:course_assessments' %}" class="submenu-link {% if request.resolver_match.url_name == 'course_assessments' %}active{% endif %}">
                             <i class="fa-solid fa-clipboard-question"></i>
@@ -880,16 +843,58 @@
                             <span>Job Placement</span>
                         </a>
                     </li>
+
+                    <li style="padding: 12px 16px 4px; font-size: 0.75rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--sidebar-border);">Directories</li>
+                    <li>
+                        <a href="{% url 'training:employee_database' %}" class="submenu-link {% if request.resolver_match.url_name == 'employee_database' %}active{% endif %}">
+                            <i class="fa-solid fa-address-card"></i>
+                            <span>Employee Database</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'training:trainer_database' %}" class="submenu-link {% if request.resolver_match.url_name == 'trainer_database' %}active{% endif %}">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                            <span>Trainer Database</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'training:brand_ambassadors' %}" class="submenu-link {% if request.resolver_match.url_name == 'brand_ambassadors' %}active{% endif %}">
+                            <i class="fa-solid fa-bullhorn"></i>
+                            <span>Brand Ambassadors</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'training:contact_directory' %}" class="submenu-link {% if request.resolver_match.url_name == 'contact_directory' %}active{% endif %}">
+                            <i class="fa-solid fa-address-book"></i>
+                            <span>Contact Directory</span>
+                        </a>
+                    </li>
+
+                    <li style="padding: 12px 16px 4px; font-size: 0.75rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--sidebar-border);">Financial Control</li>
+                    <li>
+                        <a href="{% url 'training:installment_plan' %}" class="submenu-link {% if request.resolver_match.url_name == 'installment_plan' %}active{% endif %}">
+                            <i class="fa-solid fa-credit-card"></i>
+                            <span>Installment Plan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'training:revenue_tracker' %}" class="submenu-link {% if request.resolver_match.url_name == 'revenue_tracker' %}active{% endif %}">
+                            <i class="fa-solid fa-money-bill-trend-up"></i>
+                            <span>Revenue Tracker</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'training:expense_tracker' %}" class="submenu-link {% if request.resolver_match.url_name == 'expense_tracker' %}active{% endif %}">
+                            <i class="fa-solid fa-wallet"></i>
+                            <span>Expense Tracker</span>
+                        </a>
+                    </li>
+
+                    <li style="padding: 12px 16px 4px; font-size: 0.75rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--sidebar-border);">Analytics</li>
                     <li>
                         <a href="{% url 'training:reports' %}" class="submenu-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
                             <i class="fa-solid fa-chart-pie"></i>
                             <span>Reports</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'training:system_audit_logs' %}" class="submenu-link {% if request.resolver_match.url_name == 'system_audit_logs' %}active{% endif %}">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                            <span>System Audit Logs</span>
                         </a>
                     </li>
                 </ul>

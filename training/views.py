@@ -716,11 +716,15 @@ def student_list(request):
                 
                 log_training_action(request.user, "CREATE", "learn_registrations", generated_doc_id, f"Registered student {fullName} in course {course} batch {batch}")
                 
-                # If online registration, delete it after conversion
+                # If online registration or inquiry conversion
                 online_key = request.POST.get('onlineKey')
                 if online_key:
-                    db.collection('learn_online_registrations').document(online_key).delete()
-                    log_training_action(request.user, "DELETE", "learn_online_registrations", online_key, f"Deleted processed online registration key: {online_key}")
+                    if online_key.startswith('INQ-'):
+                        db.collection('learn_online_inquiries').document(online_key).update({'status': 'Converted'})
+                        log_training_action(request.user, "UPDATE", "learn_online_inquiries", online_key, f"Converted inquiry {online_key} to registered student")
+                    else:
+                        db.collection('learn_online_registrations').document(online_key).delete()
+                        log_training_action(request.user, "DELETE", "learn_online_registrations", online_key, f"Deleted processed online registration key: {online_key}")
             
             return redirect('training:student_list')
 
@@ -788,6 +792,36 @@ def installment_plan(request):
                 elif amount_paid > 0:
                     status = "Fully Paid" if amount_paid >= effective_fee else "Partially Paid"
                 
+                # Automated GL Journal Posting for new collections
+                old_paid = float(pay_data.get('amountPaid', 0.0))
+                collected_diff = amount_paid - old_paid
+                if collected_diff > 0:
+                    try:
+                        coa_cash = list(db.collection('chart_of_accounts').where('account_code', '==', '11100').stream())
+                        coa_ar = list(db.collection('chart_of_accounts').where('account_code', '==', '11200').stream())
+                        cash_id = coa_cash[0].id if coa_cash else '11100_fallback'
+                        ar_id = coa_ar[0].id if coa_ar else '11200_fallback'
+                        
+                        entry_id = get_next_seq_id('journal_entries', 'JV-', 'entry_code', 4)
+                        journal_data = {
+                            'entry_code': entry_id,
+                            'posting_date': datetime.now().strftime('%Y-%m-%d'),
+                            'reference_document': f"Receipt: Student Installment {doc_id}",
+                            'narration': f"Automated posting for student installment payment: Student ID {pay_data.get('studentId')} ({pay_data.get('studentName')})",
+                            'status': 'Posted',
+                            'created_by': request.user.username if request.user else 'system',
+                            'approved_by': request.user.username if request.user else 'system',
+                            'lines': [
+                                {'account_id': cash_id, 'debit_amount': collected_diff, 'credit_amount': 0.0},
+                                {'account_id': ar_id, 'debit_amount': 0.0, 'credit_amount': collected_diff}
+                            ],
+                            'created_at': firestore.SERVER_TIMESTAMP
+                        }
+                        db.collection('journal_entries').document(entry_id).set(journal_data)
+                        log_training_action(request.user, "CREATE", "journal_entries", entry_id, f"Posted automated journal entry {entry_id} for collected payment {collected_diff}")
+                    except Exception as ge_err:
+                        print(f"Error posting automatic journal entry for payment: {ge_err}")
+                
                 pay_ref.update({
                     'discount': discount,
                     'amountPaid': amount_paid,
@@ -800,6 +834,34 @@ def installment_plan(request):
                 })
                 
                 log_training_action(request.user, "UPDATE", "payments", doc_id, f"Updated installment payment details for student record {doc_id}")
+                
+                # Check for certificate trigger: due is 0 and student passed assessment
+                if due <= 0.0:
+                    try:
+                        clean_course = re.sub(r'[^a-zA-Z0-9]', '', pay_data.get('courseName', ''))
+                        assess_id = f"{pay_data.get('studentId')}_{clean_course}"
+                        assess_snap = db.collection('learn_course_assessments').document(assess_id).get()
+                        if assess_snap.exists:
+                            assess_data = assess_snap.to_dict() or {}
+                            if assess_data.get('status') == 'Passed':
+                                cert_id = f"CERT-{pay_data.get('studentId')}"
+                                cert_snap = db.collection('learn_certificates').document(cert_id).get()
+                                if not cert_snap.exists:
+                                    cert_data = {
+                                        'certificateId': cert_id,
+                                        'studentId': pay_data.get('studentId'),
+                                        'studentName': pay_data.get('studentName'),
+                                        'courseName': pay_data.get('courseName'),
+                                        'issueDate': datetime.now().strftime('%Y-%m-%d'),
+                                        'grade': assess_data.get('grade', 'Passed'),
+                                        'status': 'Issued',
+                                        'createdAt': firestore.SERVER_TIMESTAMP
+                                    }
+                                    db.collection('learn_certificates').document(cert_id).set(cert_data, merge=True)
+                                    log_training_action(request.user, "CREATE", "learn_certificates", cert_id, f"Auto-issued certificate {cert_id} upon balance clearance")
+                    except Exception as cert_err:
+                        print(f"Error auto-issuing certificate on payment update: {cert_err}")
+                        
         return redirect('training:installment_plan')
         
     payments = get_collection_data('learn_payments')
@@ -919,6 +981,34 @@ def course_assessments(request):
             }
             db.collection('learn_course_assessments').document(assess_id).set(data, merge=True)
             log_training_action(request.user, "CREATE", "learn_course_assessments", assess_id, f"Saved marks/grades assessment for student {data['studentName']} in course {courseName}")
+            
+            # Check certificate trigger: student passed and outstanding balance is zero
+            if data['status'] == 'Passed':
+                try:
+                    pay_id = f"{studentId}_{clean_course}"
+                    pay_snap = db.collection('learn_payments').document(pay_id).get()
+                    if pay_snap.exists:
+                        pay_data = pay_snap.to_dict() or {}
+                        due = float(pay_data.get('dueAmount', 0.0))
+                        if due <= 0.0:
+                            cert_id = f"CERT-{studentId}"
+                            cert_snap = db.collection('learn_certificates').document(cert_id).get()
+                            if not cert_snap.exists:
+                                cert_data = {
+                                    'certificateId': cert_id,
+                                    'studentId': studentId,
+                                    'studentName': data['studentName'],
+                                    'courseName': courseName,
+                                    'issueDate': datetime.now().strftime('%Y-%m-%d'),
+                                    'grade': data['grade'],
+                                    'status': 'Issued',
+                                    'createdAt': firestore.SERVER_TIMESTAMP
+                                }
+                                db.collection('learn_certificates').document(cert_id).set(cert_data, merge=True)
+                                log_training_action(request.user, "CREATE", "learn_certificates", cert_id, f"Auto-issued certificate {cert_id} upon assessment pass")
+                except Exception as cert_err:
+                    print(f"Error auto-issuing certificate on assessment update: {cert_err}")
+                    
         return redirect('training:course_assessments')
 
     assessments = get_collection_data('learn_course_assessments')
@@ -1090,16 +1180,4 @@ def reports(request):
         'course_perf': course_list
     })
 
-@module_access('training')
-def system_audit_logs(request):
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'clear_all':
-            docs = db.collection('learn_tbl_audit_logs').stream()
-            for doc in docs:
-                db.collection('learn_tbl_audit_logs').document(doc.id).delete()
-            log_training_action(request.user, "CLEAR", "learn_tbl_audit_logs", "all", "Cleared all system audit logs")
-        return redirect('training:system_audit_logs')
 
-    logs = get_collection_data('learn_tbl_audit_logs')
-    return render(request, 'training/system_audit_logs.html', {'logs': logs})

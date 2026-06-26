@@ -238,6 +238,9 @@
                 <td>{{ inq.createdAt|date:"M d, y, h:i A" }}</td>
                 <td>
                     <div style="display: flex; gap: 8px; align-items: center; margin: 0;">
+                        <a href="{% url 'training:student_list' %}?quickfill=1&name={{ inq.name|urlencode }}&email={{ inq.email|urlencode }}&phone={{ inq.phone|urlencode }}&course={{ inq.subject|urlencode }}&key={{ inq.id }}" class="btn-action edit" style="background: rgba(33, 92, 92, 0.1); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 4px; padding: 6px 10px; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; height: 32px;" title="Convert Inquiry">
+                            <i class="fa-solid fa-user-check"></i> <span style="margin-left: 4px;">Convert</span>
+                        </a>
                         <div style="display: flex; align-items: center; background: #215c5c; border-radius: 6px; padding: 2px; height: 32px;">
                             <button type="button" onclick="openDetailsModal('{{ inq.id }}', 'inquiry')" style="background: transparent; border: none; color: #fff; padding: 0 10px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="View Details">
                                 <i class="fa-regular fa-eye"></i>

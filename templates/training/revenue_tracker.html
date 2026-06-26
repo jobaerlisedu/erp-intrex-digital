@@ -1,34 +1,53 @@
 {% extends 'erp_base.html' %}
 {% block title %}Revenue Tracker - Intrex ERP{% endblock %}
+
 {% block content %}
-<div class="flex-between">
+<div class="flex-between" style="margin-bottom: 24px;">
     <h2>Training Academy Revenue Tracker</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Log Revenue
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-money-bill-trend-up"></i> Revenue Streams
+        </button>
+    </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px; align-items: start;">
-    <!-- Log Revenue Form -->
-    <div class="glass-card">
-        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;">
-            <i class="fa-solid fa-plus-circle" style="color: var(--accent-color);"></i> Log Revenue
+<!-- Tab Content 1: Form Card -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-plus-circle" style="color: var(--accent-color);"></i>
+            Log Academy Revenue Entry
         </h3>
-        <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 16px 0 24px 0;">
-        <form method="POST" action="{% url 'training:revenue_tracker' %}">
-            {% csrf_token %}
+    </div>
+
+    <form method="POST" action="{% url 'training:revenue_tracker' %}" id="revenueForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_revenue">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
-                <label>Revenue Source / Description</label>
-                <input type="text" name="source" class="form-control" required placeholder="e.g. Student Fees - Kamrul Hasan">
+                <label>Revenue Source / Description <span class="asterisk">*</span></label>
+                <input type="text" name="source" id="source" class="form-control" required placeholder="e.g. Student Fees - Kamrul Hasan">
             </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Amount (৳)</label>
-                <input type="number" step="0.01" name="amount" class="form-control" required placeholder="e.g. 5000.00">
+            
+            <div class="form-group">
+                <label>Amount (৳) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="amount" id="amount" class="form-control" required placeholder="e.g. 5000.00">
             </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Payment Date</label>
-                <input type="date" name="date" class="form-control" required>
+
+            <div class="form-group">
+                <label>Payment Date <span class="asterisk">*</span></label>
+                <input type="date" name="date" id="date" class="form-control" required>
             </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Payment Method</label>
-                <select name="payment_method" class="form-control" required>
+            
+            <div class="form-group">
+                <label>Payment Method <span class="asterisk">*</span></label>
+                <select name="payment_method" id="payment_method" class="form-control" required>
                     <option value="bKash">bKash</option>
                     <option value="Rocket">Rocket</option>
                     <option value="Nagad">Nagad</option>
@@ -36,54 +55,107 @@
                     <option value="Cash">Cash</option>
                 </select>
             </div>
-            <div class="form-group" style="margin-top: 20px;">
+
+            <div class="form-group" style="grid-column: span 2;">
                 <label>Notes</label>
-                <textarea name="notes" class="form-control" style="height: 80px; resize: none; font-family: inherit;" placeholder="Notes..."></textarea>
+                <textarea name="notes" id="notes" class="form-control" style="height: 100px; resize: none; font-family: inherit;" placeholder="Notes..."></textarea>
             </div>
-            <button type="submit" class="btn-submit" style="width: 100%; margin-top: 24px; padding: 12px;">Log Revenue</button>
-        </form>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Log Revenue
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Registry List -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-money-bill-trend-up" style="color: var(--accent-color);"></i>
+            Revenue Stream Logs
+        </h3>
     </div>
 
-    <!-- Revenue List Table -->
-    <div class="glass-card" style="min-height: 500px;">
-        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.15rem;">
-            <i class="fa-solid fa-money-bill-trend-up" style="color: var(--accent-color);"></i> Revenue Stream Logs
-        </h3>
-        <table class="data-table" style="margin-top: 24px;">
-            <thead>
-                <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
-                    <th style="font-weight: 600; color: var(--text-primary);">Revenue Source</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Amount (৳)</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Date</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Payment Method</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Notes</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rev in revenue %}
-                <tr>
-                    <td style="font-weight: 600; color: var(--text-primary);">{{ rev.source }}</td>
-                    <td>৳{{ rev.amount|floatformat:2 }}</td>
-                    <td>{{ rev.date }}</td>
-                    <td><span class="badge success">{{ rev.payment_method }}</span></td>
-                    <td style="font-size: 0.9rem; color: var(--text-secondary);">{{ rev.notes }}</td>
-                    <td>
-                        <form method="POST" action="{% url 'training:revenue_tracker' %}" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this revenue entry?');">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="doc_id" value="{{ rev.id }}">
-                            <button type="submit" class="btn-action delete"><i class="fa-solid fa-trash-can"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 48px;">No revenue logged yet.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Revenue Source</th>
+                <th>Amount (৳)</th>
+                <th>Date</th>
+                <th>Payment Method</th>
+                <th>Notes</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rev in revenue %}
+            <tr>
+                <td style="font-weight: 600; color: var(--text-primary);">{{ rev.source }}</td>
+                <td>৳{{ rev.amount|floatformat:2 }}</td>
+                <td>{{ rev.date }}</td>
+                <td><span class="badge success">{{ rev.payment_method }}</span></td>
+                <td style="font-size: 0.9rem; color: var(--text-secondary);">{{ rev.notes }}</td>
+                <td>
+                    <form method="POST" action="{% url 'training:revenue_tracker' %}" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this revenue entry?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="doc_id" value="{{ rev.id }}">
+                        <button type="submit" class="btn-action delete" title="Delete Entry"><i class="fa-solid fa-trash-can"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 48px;">No revenue logged yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date().toISOString().substring(0, 10);
+        const dateInput = document.getElementById('date');
+        if (dateInput) dateInput.value = today;
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('revenueForm').reset();
+        const today = new Date().toISOString().substring(0, 10);
+        document.getElementById('date').value = today;
+    }
+</script>
 {% endblock %}
