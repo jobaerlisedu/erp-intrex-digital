@@ -1,0 +1,334 @@
+{% extends 'erp_base.html' %}
+{% block title %}RFQ & Bidding - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Request for Quotations (RFQ) & Bidding</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Create RFQ
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-scale-balanced"></i> Active RFQs & Bids
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Create RFQ Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Initiate Sourcing RFQ
+        </h3>
+    </div>
+
+    {% if not requisitions %}
+    <div style="text-align: center; padding: 48px; color: var(--text-secondary);">
+        <i class="fa-solid fa-circle-check" style="font-size: 2.5rem; color: #10b981; margin-bottom: 16px;"></i>
+        <p style="font-size: 1.05rem; font-weight: 600; margin: 0 0 8px 0;">No approved requisitions pending sourcing</p>
+        <p style="margin: 0;">All requisitions are already routed or in procurement stage.</p>
+    </div>
+    {% else %}
+    <form method="POST" action="{% url 'inventory:rfq_list' %}" id="rfqForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_rfq">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Link Approved Requisition <span class="asterisk">*</span></label>
+                <select name="requisition_id" id="requisition_id" class="form-control" required onchange="updateItemsPreview()">
+                    <option value="" disabled selected>Select Approved Requisition...</option>
+                    {% for req in requisitions %}
+                    <option value="{{ req.id }}">{{ req.client_name }} - {{ req.requisition_code }} (Due: {{ req.expected_delivery_date }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Bidding Deadline <span class="asterisk">*</span></label>
+                <input type="datetime-local" name="deadline" id="deadline" class="form-control" required>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Notes / Vendor Instructions</label>
+                <textarea name="notes" id="notes" class="form-control" style="height: 80px; resize: none; font-family: inherit;" placeholder="Instructions regarding delivery options, certifications, or warranties..."></textarea>
+            </div>
+        </div>
+
+        <!-- Requisition items preview -->
+        <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 20px; margin: 24px 0 16px 0; color: var(--accent-color); font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">RFQ Line Items Preview</h4>
+        <div id="items-preview-placeholder" style="color: var(--text-secondary); font-style: italic;">Select a requisition above to view items...</div>
+        <div id="items-preview-table-container" style="display: none;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Item</th>
+                        <th style="text-align: right;">Quantity</th>
+                        <th>Unit</th>
+                    </tr>
+                </thead>
+                <tbody id="items-preview-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-paper-plane"></i> Dispatch RFQ to Vendor Pool
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Tab Content 2: RFQs Ledger -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-scale-balanced" style="color: var(--accent-color);"></i>
+            Sourcing RFQs & Bids Comparisons
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>RFQ Code</th>
+                <th>Source Requisition</th>
+                <th>Deadline</th>
+                <th>Bids Rec'd</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rfqs %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ r.rfq_code }}</td>
+                <td><strong style="color: var(--text-primary);">{{ r.requisition_code }}</strong></td>
+                <td>{{ r.deadline }}</td>
+                <td style="font-weight: 600; color: var(--accent-color);">{{ r.quotes|length }} bids</td>
+                <td>
+                    <span class="badge {% if r.status == 'Selected' %}success{% elif r.status == 'Sent' %}warning{% else %}danger{% endif %}">
+                        {{ r.status }}
+                    </span>
+                </td>
+                <td>
+                    {{ r|json_script:r.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action view" onclick="compareBids('{{ r.id }}')" title="Compare Bids & Select"><i class="fa-solid fa-code-compare"></i> Compare</button>
+                        <button type="button" class="btn-action edit" onclick="openBidForm('{{ r.id }}')" title="Log Vendor Bid/Quote" style="background: rgba(16,185,129,0.1); color: #10b981; border-color: #10b981;"><i class="fa-solid fa-file-invoice-dollar"></i> Log Bid</button>
+                        
+                        <form method="POST" action="{% url 'inventory:rfq_list' %}" style="margin:0;" onsubmit="return confirm('Remove this RFQ and related bids?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_rfq">
+                            <input type="hidden" name="doc_id" value="{{ r.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete RFQ"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-secondary);">No sourcing RFQs active.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal bid form container -->
+<div id="log-bid-modal" style="display:none;">
+    <form method="POST" action="{% url 'inventory:rfq_list' %}" id="bidForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_quotation">
+        <input type="hidden" name="rfq_id" id="modal-rfq-id">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label>Select Vendor <span class="asterisk">*</span></label>
+                <select name="vendor_id" class="form-control" required>
+                    {% for v in vendors %}
+                    <option value="{{ v.id }}">{{ v.name }} ({{ v.vendor_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quote Reference Code <span class="asterisk">*</span></label>
+                <input type="text" name="quotation_reference" class="form-control" required placeholder="e.g. Q-9821">
+            </div>
+            <div class="form-group">
+                <label>Lead Time (Days) <span class="asterisk">*</span></label>
+                <input type="number" name="lead_time_days" class="form-control" required placeholder="5">
+            </div>
+            <div class="form-group">
+                <label>Delivery Charges ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="delivery_charges" class="form-control" required placeholder="0.00">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Warranty Terms</label>
+                <input type="text" name="warranty_terms" class="form-control" placeholder="e.g. 1 Year Replacement">
+            </div>
+        </div>
+
+        <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 12px; margin: 16px 0 8px 0; color: var(--accent-color); font-size: 0.9rem; font-weight: 700; text-transform: uppercase;">Bid Pricing details</h4>
+        <div id="modal-items-inputs" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+        <button type="submit" class="btn-submit" style="margin-top: 20px; width: 100%;">Submit Vendor Bid</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const rfqsDb = JSON.parse('{{ rfqs_json|escapejs }}');
+
+    {% if requisitions %}
+    const reqsDb = JSON.parse('{{ requisitions|json_script:"reqs-data" }}' ? document.getElementById('reqs-data').textContent : '[]');
+    {% else %}
+    const reqsDb = [];
+    {% endif %}
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function updateItemsPreview() {
+        const selId = document.getElementById('requisition_id').value;
+        const req = reqsDb.find(r => r.id === selId);
+        
+        const placeholder = document.getElementById('items-preview-placeholder');
+        const container = document.getElementById('items-preview-table-container');
+        const tbody = document.getElementById('items-preview-tbody');
+
+        if (!req) {
+            placeholder.style.display = 'block';
+            container.style.display = 'none';
+            return;
+        }
+
+        placeholder.style.display = 'none';
+        container.style.display = 'block';
+        tbody.innerHTML = '';
+
+        req.items.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${item.product_name}</strong></td>
+                    <td style="text-align: right; font-weight: 600;">${item.requested_quantity}</td>
+                    <td>${item.unit_of_measure}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function openBidForm(rfqId) {
+        const rfq = rfqsDb.find(r => r.id === rfqId);
+        if (!rfq) return;
+
+        document.getElementById('modal-rfq-id').value = rfqId;
+        const container = document.getElementById('modal-items-inputs');
+        container.innerHTML = '';
+
+        rfq.items.forEach((item, idx) => {
+            container.innerHTML += `
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; align-items: center;">
+                    <div style="font-weight: 600; color: var(--text-primary);">${item.product_name} (${item.requested_quantity} ${item.unit_of_measure})</div>
+                    <div class="form-group" style="margin:0;">
+                        <input type="number" step="0.01" name="price_${idx}" class="form-control" required placeholder="Unit Price ($)">
+                    </div>
+                </div>
+            `;
+        });
+
+        const modalHtml = document.getElementById('log-bid-modal').innerHTML;
+        openGlobalModal("Log Vendor Quotation Bid", modalHtml, rfq.rfq_code);
+    }
+
+    function compareBids(rfqId) {
+        const rfq = rfqsDb.find(r => r.id === rfqId);
+        if (!rfq) return;
+
+        if (!rfq.quotes || rfq.quotes.length === 0) {
+            openGlobalModal("Bids Comparison Matrix", `<div style="text-align: center; padding: 24px; color: var(--text-secondary);">No bids submitted for this RFQ yet.</div>`, rfq.rfq_code);
+            return;
+        }
+
+        let matrixHtml = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Lead Time</th>
+                        <th>Charges</th>
+                        <th>Grand Total</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        rfq.quotes.forEach(q => {
+            let acceptBtn = '';
+            if (q.status === 'Under Review' && rfq.status === 'Sent') {
+                acceptBtn = `
+                    <form method="POST" action="{% url 'inventory:rfq_list' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="accept_quotation">
+                        <input type="hidden" name="doc_id" value="${q.id}">
+                        <button type="submit" class="btn-submit" style="padding: 6px 12px; font-size: 0.78rem; background-color: #10b981; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-check"></i> Accept Bid
+                        </button>
+                    </form>
+                `;
+            } else if (q.status === 'Accepted') {
+                acceptBtn = `<span style="color:#10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Selected</span>`;
+            } else {
+                acceptBtn = `<span style="color:var(--text-secondary);">${q.status}</span>`;
+            }
+
+            matrixHtml += `
+                <tr>
+                    <td>
+                        <strong style="color: var(--text-primary);">${q.vendor_name}</strong>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">Ref: ${q.quotation_reference}</div>
+                    </td>
+                    <td>${q.lead_time_days} days</td>
+                    <td>$${q.delivery_charges}</td>
+                    <td style="font-weight: 700; color: #10b981;">$${q.grand_total.toFixed(2)}</td>
+                    <td><span class="badge warning">${q.status}</span></td>
+                    <td>${acceptBtn}</td>
+                </tr>
+            `;
+        });
+
+        matrixHtml += `</tbody></table>`;
+        openGlobalModal("RFQ SOURCING COMPARISON MATRIX", matrixHtml, rfq.rfq_code);
+    }
+</script>
+{% endblock %}

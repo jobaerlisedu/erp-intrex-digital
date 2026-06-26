@@ -1,0 +1,225 @@
+{% extends 'erp_base.html' %}
+{% block title %}Vendor Directory - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Vendor Directory Management</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Register Vendor
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-address-book"></i> Vendor Directory
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Register Vendor Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Register Vendor Profile
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'inventory:vendors_list' %}" id="vendorForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_vendor">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Company / Supplier Name <span class="asterisk">*</span></label>
+                <input type="text" name="name" id="name" class="form-control" required placeholder="e.g. Globex Logistics Ltd">
+            </div>
+
+            <div class="form-group">
+                <label>Contact Person Name <span class="asterisk">*</span></label>
+                <input type="text" name="contact_name" id="contact_name" class="form-control" required placeholder="e.g. Alice Smith">
+            </div>
+
+            <div class="form-group">
+                <label>Contact Email <span class="asterisk">*</span></label>
+                <input type="email" name="email" id="email" class="form-control" required placeholder="supplier@domain.com">
+            </div>
+
+            <div class="form-group">
+                <label>Contact Phone <span class="asterisk">*</span></label>
+                <input type="text" name="phone" id="phone" class="form-control" required placeholder="+880 1XXX-XXXXXX">
+            </div>
+
+            <div class="form-group">
+                <label>Payment Terms <span class="asterisk">*</span></label>
+                <select name="payment_terms" id="payment_terms" class="form-control" required>
+                    <option value="Net 30">Net 30</option>
+                    <option value="Net 15">Net 15</option>
+                    <option value="Net 60">Net 60</option>
+                    <option value="COD">Cash On Delivery (COD)</option>
+                    <option value="Advance">100% Advance Payment</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Performance Rating (1.0 to 5.0) <span class="asterisk">*</span></label>
+                <input type="number" step="0.1" min="1" max="5" name="performance_rating" id="performance_rating" class="form-control" required placeholder="5.0">
+            </div>
+
+            <div class="form-group">
+                <label>Status <span class="asterisk">*</span></label>
+                <select name="is_active" id="is_active" class="form-control" required>
+                    <option value="True" selected>Active / Approved</option>
+                    <option value="False">Inactive / Blacklisted</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Supplied Categories (Comma Separated)</label>
+                <input type="text" name="supplied_categories" id="supplied_categories" class="form-control" placeholder="e.g. Electronics, Raw Materials, Office Supplies">
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Business Address</label>
+                <textarea name="address" id="address" class="form-control" style="height: 80px; resize: none; font-family: inherit;" placeholder="Full corporate headquarter address..."></textarea>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Register Vendor
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Directory Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-address-book" style="color: var(--accent-color);"></i>
+            Vendor Registry Ledger
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Company Name</th>
+                <th>Contact info</th>
+                <th>Payment Terms</th>
+                <th>Performance</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in vendors %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ v.vendor_code }}</td>
+                <td>
+                    <strong style="color: var(--text-primary);">{{ v.name }}</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Contact: {{ v.contact_name }}</div>
+                </td>
+                <td>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);"><i class="fa-solid fa-phone"></i> {{ v.phone }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;"><i class="fa-solid fa-envelope"></i> {{ v.email }}</div>
+                </td>
+                <td>{{ v.payment_terms }}</td>
+                <td>
+                    <span style="font-weight: 700; color: #f59e0b;"><i class="fa-solid fa-star"></i> {{ v.performance_rating }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if v.is_active %}success{% else %}danger{% endif %}">
+                        {% if v.is_active %}Active{% else %}Suspended{% endif %}
+                    </span>
+                </td>
+                <td>
+                    {{ v|json_script:v.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ v.id }}')" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'inventory:vendors_list' %}" style="margin:0;" onsubmit="return confirm('Remove this vendor profile?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_vendor">
+                            <input type="hidden" name="doc_id" value="{{ v.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Profile"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">No vendors registered.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const vendorsDb = JSON.parse('{{ vendors_json|escapejs }}');
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = vendorsDb.find(v => v.id === id);
+        if (!data) return;
+
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('name').value = data.name || '';
+        document.getElementById('contact_name').value = data.contact_name || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('phone').value = data.phone || '';
+        document.getElementById('address').value = data.address || '';
+        document.getElementById('payment_terms').value = data.payment_terms || 'Net 30';
+        document.getElementById('performance_rating').value = data.performance_rating || '5.0';
+        document.getElementById('is_active').value = data.is_active ? 'True' : 'False';
+        document.getElementById('supplied_categories').value = data.supplied_categories ? data.supplied_categories.join(', ') : '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Vendor Profile';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Profile';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('vendorForm').reset();
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Register Vendor Profile';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Register Vendor';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

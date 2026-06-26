@@ -1,0 +1,211 @@
+{% extends 'erp_base.html' %}
+{% block title %}Purchase Orders - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-draft {
+        background: rgba(148, 163, 184, 0.1) !important;
+        color: #64748b !important;
+        border: 1px solid rgba(148, 163, 184, 0.2) !important;
+    }
+    .status-approved {
+        background: rgba(59, 130, 246, 0.1) !important;
+        color: #3b82f6 !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    }
+    .status-partial {
+        background: rgba(245, 158, 11, 0.1) !important;
+        color: #f59e0b !important;
+        border: 1px solid rgba(245, 158, 11, 0.2) !important;
+    }
+    .status-fulfilled {
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #10b981 !important;
+        border: 1px solid rgba(16, 185, 129, 0.2) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Purchase Orders (PO) Manager</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-list-btn" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-file-contract"></i> Purchase Orders Registry
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content: POs Ledger -->
+<div id="tab-list" class="glass-card" style="min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-file-contract" style="color: var(--accent-color);"></i>
+            Approved & Outgoing POs
+        </h3>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="search-po" onkeyup="filterPOs()" class="form-control" placeholder="Search PO or Vendor..." style="width: 240px; height: 38px;">
+            <select id="filter-po-status" onchange="filterPOs()" class="form-control" style="width: 180px; height: 38px;">
+                <option value="all">All Status</option>
+                <option value="Draft">Draft</option>
+                <option value="Approved">Approved</option>
+                <option value="Partially Received">Partially Received</option>
+                <option value="Fulfilled">Fulfilled</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>PO Code</th>
+                <th>Vendor</th>
+                <th>Source Requisition</th>
+                <th>Total Value</th>
+                <th>Created At</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="po-tbody">
+            {% for po in purchase_orders %}
+            <tr class="po-row" data-vendor="{{ po.vendor_name }}" data-code="{{ po.po_code }}" data-status="{{ po.status }}">
+                <td style="font-weight: 700; color: var(--accent-color);">{{ po.po_code }}</td>
+                <td><strong style="color: var(--text-primary);">{{ po.vendor_name }}</strong></td>
+                <td>{{ po.requisition_code }}</td>
+                <td style="font-weight: 600; color: #10b981;">${{ po.grand_total|floatformat:2 }}</td>
+                <td>{{ po.created_at }}</td>
+                <td>
+                    <span class="badge payment-status {% if po.status == 'Draft' %}status-draft{% elif po.status == 'Approved' %}status-approved{% elif po.status == 'Partially Received' %}status-partial{% elif po.status == 'Fulfilled' %}status-fulfilled{% else %}status-unpaid{% endif %}">
+                        {{ po.status }}
+                    </span>
+                </td>
+                <td>
+                    {{ po|json_script:po.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action view" onclick="viewPoDetails('{{ po.id }}')" title="View Details"><i class="fa-solid fa-eye"></i> Details</button>
+                        
+                        {% if po.status == 'Draft' %}
+                        <form method="POST" action="{% url 'inventory:po_list' %}" style="margin: 0;" onsubmit="return confirm('Approve this purchase order?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve_po">
+                            <input type="hidden" name="doc_id" value="{{ po.id }}">
+                            <button type="submit" class="btn-submit" style="padding: 6px 12px; font-size: 0.78rem; background-color: #10b981; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-circle-check"></i> Approve
+                            </button>
+                        </form>
+
+                        <form method="POST" action="{% url 'inventory:po_list' %}" style="margin: 0;" onsubmit="return confirm('Cancel this purchase order?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancel_po">
+                            <input type="hidden" name="doc_id" value="{{ po.id }}">
+                            <button type="submit" class="btn-submit" style="padding: 6px 12px; font-size: 0.78rem; background-color: #ef4444; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-ban"></i> Cancel
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'inventory:po_list' %}" style="margin:0;" onsubmit="return confirm('Delete this PO?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_po">
+                            <input type="hidden" name="doc_id" value="{{ po.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete PO"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">No purchase orders found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const posDb = JSON.parse('{{ pos_json|escapejs }}');
+
+    function filterPOs() {
+        const q = document.getElementById('search-po').value.toLowerCase();
+        const status = document.getElementById('filter-po-status').value;
+        
+        document.querySelectorAll('.po-row').forEach(row => {
+            const vendor = row.getAttribute('data-vendor').toLowerCase();
+            const code = row.getAttribute('data-code').toLowerCase();
+            const rowStatus = row.getAttribute('data-status');
+            
+            const matchQ = vendor.includes(q) || code.includes(q);
+            const matchStatus = (status === 'all' || rowStatus === status);
+            
+            if (matchQ && matchStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function viewPoDetails(id) {
+        const po = posDb.find(p => p.id === id);
+        if (!po) return;
+
+        let itemsHtml = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Item</th>
+                        <th style="text-align: right;">Qty Ordered</th>
+                        <th style="text-align: right;">Qty Received</th>
+                        <th style="text-align: right;">Unit Price</th>
+                        <th style="text-align: right;">Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        po.items.forEach(item => {
+            itemsHtml += `
+                <tr>
+                    <td><strong>${item.product_name}</strong></td>
+                    <td style="text-align: right;">${item.quantity_ordered}</td>
+                    <td style="text-align: right; color: var(--accent-color); font-weight: 600;">${item.quantity_received}</td>
+                    <td style="text-align: right;">$${item.unit_price.toFixed(2)}</td>
+                    <td style="text-align: right; font-weight: 600; color: var(--text-primary);">$${item.line_total.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        itemsHtml += `</tbody></table>`;
+
+        const modalHtml = `
+            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Vendor Name:</strong>
+                        <div style="font-weight:700;">${po.vendor_name}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Shipping Address:</strong>
+                        <div>${po.shipping_address || 'Main Warehouse'}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Payment Terms:</strong>
+                        <div>${po.payment_terms}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Total Valuation:</strong>
+                        <div style="font-weight:700; color: #10b981; font-size: 1.1rem;">$${po.grand_total.toFixed(2)}</div>
+                    </div>
+                </div>
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color);">PURCHASE ORDER LINE ITEMS</h4>
+                ${itemsHtml}
+            </div>
+        `;
+        openGlobalModal(`PURCHASE ORDER INVOICE (${po.po_code})`, modalHtml, po.vendor_name);
+    }
+</script>
+{% endblock %}

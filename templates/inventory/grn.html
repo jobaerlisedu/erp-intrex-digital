@@ -1,0 +1,279 @@
+{% extends 'erp_base.html' %}
+{% block title %}Goods Receipt Notes - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Goods Receipt Notes (GRN)</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Log Goods Receipt
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-boxes-packing"></i> Goods Receipt Ledger
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Log Goods Receipt Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Record Goods Inflow (GRN)
+        </h3>
+    </div>
+
+    {% if not purchase_orders %}
+    <div style="text-align: center; padding: 48px; color: var(--text-secondary);">
+        <i class="fa-solid fa-circle-check" style="font-size: 2.5rem; color: #10b981; margin-bottom: 16px;"></i>
+        <p style="font-size: 1.05rem; font-weight: 600; margin: 0 0 8px 0;">No active purchase orders pending receipt</p>
+        <p style="margin: 0;">Create and approve Purchase Orders first to receive shipments.</p>
+    </div>
+    {% else %}
+    <form method="POST" action="{% url 'inventory:grn_list' %}" id="grnForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_grn">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Select Pending Purchase Order (PO) <span class="asterisk">*</span></label>
+                <select name="po_id" id="po_id" class="form-control" required onchange="updatePoItemsFields()">
+                    <option value="" disabled selected>Select Approved PO...</option>
+                    {% for po in purchase_orders %}
+                    <option value="{{ po.id }}">{{ po.po_code }} (Vendor: {{ po.vendor_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Vendor Delivery Note Reference <span class="asterisk">*</span></label>
+                <input type="text" name="delivery_note_ref" id="delivery_note_ref" class="form-control" required placeholder="e.g. DN-8121">
+            </div>
+
+            <div class="form-group">
+                <label>Receipt Date <span class="asterisk">*</span></label>
+                <input type="date" name="received_date" id="received_date" class="form-control" required>
+            </div>
+        </div>
+
+        <!-- Quality check list -->
+        <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 20px; margin: 24px 0 16px 0; color: var(--accent-color); font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">Shipment Quality Inspection checklist</h4>
+        <div id="po-items-inputs-placeholder" style="color: var(--text-secondary); font-style: italic;">Select a purchase order above to start check-in...</div>
+        <div id="po-items-inputs-container" style="display: none; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+            <!-- Appended dynamically -->
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-boxes-stacked"></i> Certify & Update Inventory
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Tab Content 2: GRN Ledger -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-boxes-packing" style="color: var(--accent-color);"></i>
+            Goods Receipt Notes Ledger
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>GRN Code</th>
+                <th>PO Reference</th>
+                <th>Delivery Note</th>
+                <th>Received By</th>
+                <th>Received Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in goods_receipts %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ g.grn_code }}</td>
+                <td style="font-weight: 600;">{{ g.po_code }}</td>
+                <td>{{ g.delivery_note_ref }}</td>
+                <td><code style="font-weight:700; color:var(--text-primary);">{{ g.received_by }}</code></td>
+                <td>{{ g.received_date }}</td>
+                <td>
+                    <span class="badge success">{{ g.status }}</span>
+                </td>
+                <td>
+                    {{ g|json_script:g.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action view" onclick="viewGrnDetails('{{ g.id }}')" title="View Items"><i class="fa-solid fa-eye"></i> View</button>
+                        
+                        <form method="POST" action="{% url 'inventory:grn_list' %}" style="margin:0;" onsubmit="return confirm('Remove this GRN entry?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_grn">
+                            <input type="hidden" name="doc_id" value="{{ g.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete GRN"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">No GRN logs registered.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    {% if purchase_orders %}
+    const posDb = JSON.parse('{{ purchase_orders|json_script:"pos-data" }}' ? document.getElementById('pos-data').textContent : '[]');
+    {% else %}
+    const posDb = [];
+    {% endif %}
+
+    const grnsDb = {{ goods_receipts|safe|default:"[]" }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('received_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function updatePoItemsFields() {
+        const selId = document.getElementById('po_id').value;
+        const po = posDb.find(p => p.id === selId);
+        
+        const placeholder = document.getElementById('po-items-inputs-placeholder');
+        const container = document.getElementById('po-items-inputs-container');
+
+        if (!po) {
+            placeholder.style.display = 'block';
+            container.style.display = 'none';
+            return;
+        }
+
+        placeholder.style.display = 'none';
+        container.style.display = 'flex';
+        container.innerHTML = '';
+
+        po.items.forEach((item, idx) => {
+            const pendingQty = item.quantity_ordered - (item.quantity_received || 0.0);
+            
+            container.innerHTML += `
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--sidebar-border); padding: 16px; border-radius: 8px; display: grid; grid-template-columns: 2fr 1fr 1fr 2fr 2fr; gap: 12px; align-items: center;">
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.95rem;">${item.product_name}</strong>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Ordered: ${item.quantity_ordered} | Rec'd: ${item.quantity_received || 0}</div>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.75rem;">Qty Accepted <span class="asterisk">*</span></label>
+                        <input type="number" step="0.01" name="received_qty[]" class="form-control" required value="${pendingQty}">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.75rem;">Qty Rejected <span class="asterisk">*</span></label>
+                        <input type="number" step="0.01" name="rejected_qty[]" class="form-control" required value="0">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.75rem;">Rejection Reason</label>
+                        <input type="text" name="rejection_reason[]" class="form-control" placeholder="e.g. Broken packaging">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.75rem;">Warehouse Location <span class="asterisk">*</span></label>
+                        <input type="text" name="storage_location[]" class="form-control" required placeholder="e.g. Aisle A, Shelf 4">
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function viewGrnDetails(id) {
+        const grn = grnsDb.find(g => g.id === id);
+        if (!grn) return;
+
+        let itemsHtml = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Item</th>
+                        <th style="text-align: right;">Qty Accepted</th>
+                        <th style="text-align: right;">Qty Rejected</th>
+                        <th>Rejection Reason</th>
+                        <th>Warehouse Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        grn.items.forEach(item => {
+            itemsHtml += `
+                <tr>
+                    <td><strong>${item.product_name}</strong></td>
+                    <td style="text-align: right; color: #10b981; font-weight: 600;">${item.quantity_accepted}</td>
+                    <td style="text-align: right; color: #ef4444; font-weight: 600;">${item.quantity_rejected}</td>
+                    <td>${item.rejection_reason || '--'}</td>
+                    <td><code style="font-weight:700;">${item.storage_location}</code></td>
+                </tr>
+            `;
+        });
+        itemsHtml += `</tbody></table>`;
+
+        const modalHtml = `
+            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">PO Reference:</strong>
+                        <div style="font-weight:700;">${grn.po_code}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Delivery Challan Ref:</strong>
+                        <div>${grn.delivery_note_ref}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Received By:</strong>
+                        <div>${grn.received_by}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Receipt Date:</strong>
+                        <div>${grn.received_date}</div>
+                    </div>
+                </div>
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color);">GOODS INVENTORY CHECK-IN DETAIL</h4>
+                ${itemsHtml}
+            </div>
+        `;
+        openGlobalModal(`GOODS RECEIPT NOTE (${grn.grn_code})`, modalHtml, grn.po_code);
+    }
+</script>
+{% endblock %}

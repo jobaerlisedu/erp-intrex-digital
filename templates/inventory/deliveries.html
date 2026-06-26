@@ -1,0 +1,218 @@
+{% extends 'erp_base.html' %}
+{% block title %}Dispatch & Challan - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Dispatch & Delivery Challan Manager</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Prepare Challan
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-truck-fast"></i> Dispatch Ledger
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Prepare Challan Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Prepare Delivery Challan
+        </h3>
+    </div>
+
+    {% if not requisitions %}
+    <div style="text-align: center; padding: 48px; color: var(--text-secondary);">
+        <i class="fa-solid fa-circle-check" style="font-size: 2.5rem; color: #10b981; margin-bottom: 16px;"></i>
+        <p style="font-size: 1.05rem; font-weight: 600; margin: 0 0 8px 0;">No active requisitions pending dispatch</p>
+        <p style="margin: 0;">Record or approve client requisitions first to dispatch deliveries.</p>
+    </div>
+    {% else %}
+    <form method="POST" action="{% url 'inventory:delivery_list' %}" id="deliveryForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_delivery">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Select Requisition for Dispatch <span class="asterisk">*</span></label>
+                <select name="requisition_id" id="requisition_id" class="form-control" required>
+                    <option value="" disabled selected>Select Pending Requisition...</option>
+                    {% for r in requisitions %}
+                    <option value="{{ r.id }}">{{ r.client_name }} - {{ r.requisition_code }} (Due: {{ r.expected_delivery_date }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Handover Person Name <span class="asterisk">*</span></label>
+                <input type="text" name="handover_person_name" id="handover_person_name" class="form-control" required placeholder="e.g. John Doe">
+            </div>
+
+            <div class="form-group">
+                <label>Handover Person Contact <span class="asterisk">*</span></label>
+                <input type="text" name="handover_contact" id="handover_contact" class="form-control" required placeholder="+880 1XXX-XXXXXX">
+            </div>
+
+            <div class="form-group">
+                <label>Dispatch Date <span class="asterisk">*</span></label>
+                <input type="date" name="dispatch_date" id="dispatch_date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Status <span class="asterisk">*</span></label>
+                <select name="delivery_status" id="delivery_status" class="form-control" required>
+                    <option value="Dispatched" selected>Dispatched / Out for Delivery</option>
+                    <option value="Delivered">Delivered & Signed Off</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Proof of Delivery URL (File Link)</label>
+                <input type="text" name="proof_of_delivery" id="proof_of_delivery" class="form-control" placeholder="Link to scan of signed challan receipt...">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Prepare Challan
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Tab Content 2: Dispatch Ledger Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-truck-fast" style="color: var(--accent-color);"></i>
+            Delivery Challan Ledger
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Challan Code</th>
+                <th>Client Name</th>
+                <th>Requisition Ref</th>
+                <th>Handover Recipient</th>
+                <th>Dispatch Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in deliveries %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ d.challan_code }}</td>
+                <td><strong style="color: var(--text-primary);">{{ d.client_name }}</strong></td>
+                <td><code>{{ d.requisition_code }}</code></td>
+                <td>
+                    <strong style="color: var(--text-primary);">{{ d.handover_person_name }}</strong>
+                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">Contact: {{ d.handover_contact }}</div>
+                </td>
+                <td>{{ d.dispatch_date }}</td>
+                <td>
+                    <span class="badge {% if d.delivery_status == 'Delivered' %}success{% else %}warning{% endif %}">
+                        {{ d.delivery_status }}
+                    </span>
+                </td>
+                <td>
+                    {{ d|json_script:d.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ d.id }}')" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i> Update</button>
+                        
+                        <form method="POST" action="{% url 'inventory:delivery_list' %}" style="margin:0;" onsubmit="return confirm('Remove this dispatch record?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_delivery">
+                            <input type="hidden" name="doc_id" value="{{ d.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Challan"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">No deliveries logged in challan ledger.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const deliveriesDb = JSON.parse('{{ deliveries_json|escapejs }}');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('dispatch_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = deliveriesDb.find(d => d.id === id);
+        if (!data) return;
+
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('requisition_id').value = data.requisition_id || '';
+        document.getElementById('handover_person_name').value = data.handover_person_name || '';
+        document.getElementById('handover_contact').value = data.handover_contact || '';
+        document.getElementById('dispatch_date').value = data.dispatch_date || '';
+        document.getElementById('delivery_status').value = data.delivery_status || 'Dispatched';
+        document.getElementById('proof_of_delivery').value = data.proof_of_delivery || '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Update Dispatch Challan';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Challan';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('deliveryForm').reset();
+        document.getElementById('dispatch_date').value = new Date().toISOString().substring(0, 10);
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Prepare Delivery Challan';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Prepare Challan';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

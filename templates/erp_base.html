@@ -575,11 +575,40 @@
             </li>
             {% endif %}
             {% if 'inventory' in user_modules %}
-            <li>
-                <a href="{% url 'inventory:index' %}" class="nav-link {% if request.resolver_match.namespace == 'inventory' %}active{% endif %}">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                    <span>Inventory</span>
+            <li class="nav-item-dropdown {% if request.resolver_match.namespace == 'inventory' %}active open{% endif %}">
+                <a href="#" class="nav-link dropdown-toggle" onclick="toggleDropdown(event, 'inventory-dropdown')">
+                    <span style="display: flex; align-items: center; gap: 14px;">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Procurement & Stock</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down dropdown-caret"></i>
                 </a>
+                <ul id="inventory-dropdown" class="submenu-links {% if request.resolver_match.namespace == 'inventory' %}show{% endif %}">
+                    <li>
+                        <a href="{% url 'inventory:index' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'index' %}active{% endif %}">Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:requisitions_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'requisitions_list' %}active{% endif %}">Client Requisitions</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:vendors_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'vendors_list' %}active{% endif %}">Vendor Directory</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:rfq_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'rfq_list' %}active{% endif %}">RFQ & Bidding</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:po_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'po_list' %}active{% endif %}">Purchase Orders</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:grn_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'grn_list' %}active{% endif %}">Goods Receipt Notes</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:stock_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'stock_list' %}active{% endif %}">Warehouse Stock</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'inventory:delivery_list' %}" class="submenu-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name == 'delivery_list' %}active{% endif %}">Dispatch & Challan</a>
+                    </li>
+                </ul>
             </li>
             {% endif %}
             {% if 'investment' in user_modules %}
