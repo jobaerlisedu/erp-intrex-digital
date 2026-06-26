@@ -223,6 +223,48 @@
         .badge.warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
         .badge.danger { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
 
+        /* Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--sidebar-border);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .pagination-pages {
+            display: flex;
+            gap: 6px;
+        }
+        .page-btn {
+            padding: 4px 10px;
+            border: 1px solid var(--sidebar-border);
+            background: transparent;
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .page-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-color);
+        }
+        .page-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        tr.page-hidden {
+            display: none !important;
+        }
+
         .flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 
         /* Submenu and Dropdowns */
@@ -808,6 +850,154 @@
                 closeGlobalModal();
             }
         });
+
+        // Generic automatic pagination for all tables with class "data-table"
+        document.addEventListener('DOMContentLoaded', function() {
+            const tables = document.querySelectorAll('table.data-table');
+            tables.forEach(table => {
+                if (table.getAttribute('data-manual-pagination') === 'true' || table.id === 'position-table') {
+                    return;
+                }
+                initTablePagination(table);
+            });
+        });
+
+        function initTablePagination(table) {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const container = document.createElement('div');
+            container.className = 'pagination-container';
+            container.style.marginTop = '16px';
+
+            const info = document.createElement('div');
+            info.className = 'pagination-info';
+            container.appendChild(info);
+
+            const pages = document.createElement('div');
+            pages.className = 'pagination-pages';
+            container.appendChild(pages);
+
+            table.parentNode.insertBefore(container, table.nextSibling);
+
+            let currentPage = 1;
+            const rowsPerPage = 10;
+
+            function update() {
+                const allRows = Array.from(tbody.querySelectorAll('tr'));
+                const validRows = allRows.filter(row => !row.classList.contains('no-data-row') && !row.classList.contains('header-row'));
+                
+                const visibleRows = validRows.filter(row => {
+                    const isPageHidden = row.classList.contains('page-hidden');
+                    if (isPageHidden) row.classList.remove('page-hidden');
+                    const display = window.getComputedStyle(row).display;
+                    if (isPageHidden) row.classList.add('page-hidden');
+                    return display !== 'none';
+                });
+
+                const totalRows = visibleRows.length;
+                const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+                validRows.forEach(row => row.classList.add('page-hidden'));
+
+                for (let i = startIndex; i < endIndex; i++) {
+                    if (visibleRows[i]) {
+                        visibleRows[i].classList.remove('page-hidden');
+                    }
+                }
+
+                if (totalRows === 0) {
+                    info.innerText = "Showing 0 to 0 of 0 entries";
+                } else {
+                    info.innerText = `Showing ${startIndex + 1} to ${endIndex} of ${totalRows} entries`;
+                }
+
+                pages.innerHTML = '';
+                if (totalPages > 1) {
+                    const prevBtn = document.createElement('button');
+                    prevBtn.innerText = 'Prev';
+                    prevBtn.className = 'page-btn';
+                    prevBtn.disabled = currentPage === 1;
+                    prevBtn.onclick = (e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) {
+                            currentPage--;
+                            update();
+                        }
+                    };
+                    pages.appendChild(prevBtn);
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const numBtn = document.createElement('button');
+                        numBtn.innerText = i;
+                        numBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+                        numBtn.onclick = (e) => {
+                            e.preventDefault();
+                            currentPage = i;
+                            update();
+                        };
+                        pages.appendChild(numBtn);
+                    }
+
+                    const nextBtn = document.createElement('button');
+                    nextBtn.innerText = 'Next';
+                    nextBtn.className = 'page-btn';
+                    nextBtn.disabled = currentPage === totalPages;
+                    nextBtn.onclick = (e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                            update();
+                        }
+                    };
+                    pages.appendChild(nextBtn);
+                }
+            }
+
+            update();
+
+            const observer = new MutationObserver((mutations) => {
+                let shouldUpdate = false;
+                mutations.forEach(mutation => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        shouldUpdate = true;
+                    }
+                    if (mutation.type === 'childList') {
+                        shouldUpdate = true;
+                    }
+                });
+
+                if (shouldUpdate) {
+                    observer.disconnect();
+                    update();
+                    observer.observe(tbody, {
+                        attributes: true,
+                        childList: true,
+                        subtree: true,
+                        attributeFilter: ['style']
+                    });
+                }
+            });
+
+            observer.observe(tbody, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+                attributeFilter: ['style']
+            });
+
+            const parentCard = table.closest('.glass-card') || document.body;
+            parentCard.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('input', () => setTimeout(update, 50));
+                input.addEventListener('change', () => setTimeout(update, 50));
+            });
+        }
     </script>
     
     {% block extra_js %}{% endblock %}

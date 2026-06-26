@@ -181,6 +181,7 @@
             <thead>
                 <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
                     <th style="font-weight: 600; color: var(--text-primary);">Department Name</th>
+                    <th style="font-weight: 600; color: var(--text-primary); width: 220px;">Linked Modules</th>
                     <th style="font-weight: 600; color: var(--text-primary); width: 150px;">Status</th>
                     <th style="font-weight: 600; color: var(--text-primary); width: 120px;">Actions</th>
                 </tr>
@@ -189,10 +190,14 @@
                 {% for d in departments %}
                 <tr class="dept-row" data-name="{{ d.name }}" data-status="{{ d.status }}">
                     <td>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ d.name }}</strong>
+                        <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ d.name }}</strong>
+                        {% if d.notes %}
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">{{ d.notes }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                             {% if d.module_linking %}
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                                 {% for m in d.module_linking %}
                                 <span class="badge info" style="font-size: 0.72rem; padding: 2px 6px; text-transform: uppercase; font-weight: 600; background: rgba(33, 150, 243, 0.1); color: #2196f3; border: 1px solid rgba(33, 150, 243, 0.2);">
                                     {% if m == 'hrm' %}HRM
@@ -205,12 +210,10 @@
                                     {% endif %}
                                 </span>
                                 {% endfor %}
-                            </div>
+                            {% else %}
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">None</span>
                             {% endif %}
                         </div>
-                        {% if d.notes %}
-                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">{{ d.notes }}</div>
-                        {% endif %}
                     </td>
                     <td>
                         <span class="badge {% if d.status == 'Active' %}success{% else %}danger{% endif %}">
@@ -438,7 +441,7 @@
                     </button>
                 </div>
             </div>
-        <table class="data-table" style="margin-top: 24px;">
+        <table class="data-table" id="position-table" data-manual-pagination="true" style="margin-top: 24px;">
                 <thead>
                     <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
                         <th style="font-weight: 600; color: var(--text-primary);">Title</th>
