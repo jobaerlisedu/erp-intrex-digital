@@ -357,17 +357,16 @@ def department(request):
                 except Exception as e:
                     print(f"Error adding sub department: {e}")
                     
-        # 3. Add Position
         elif action == 'add_position':
             dept_id = request.POST.get('dept_id')
-            sub_dept_id = request.POST.get('sub_dept_id')
+            sub_dept_id = request.POST.get('sub_dept_id', '')
             title = request.POST.get('title')
             status = request.POST.get('status', 'Active')
             
-            if dept_id and sub_dept_id:
+            if dept_id:
                 try:
                     dept_name = None
-                    sub_dept_name = None
+                    sub_dept_name = "None"
                     
                     # Resolve department
                     if dept_id.startswith('sample-'):
@@ -381,41 +380,45 @@ def department(request):
                             dept_name = dept_doc.to_dict().get('name')
                             
                     # Resolve sub department
-                    if sub_dept_id.startswith('sample-'):
-                        for sd in default_sub_departments:
-                            if sd['id'] == sub_dept_id:
-                                sub_dept_name = sd['name']
-                                break
+                    if sub_dept_id:
+                        if sub_dept_id.startswith('sample-'):
+                            for sd in default_sub_departments:
+                                if sd['id'] == sub_dept_id:
+                                    sub_dept_name = sd['name']
+                                    break
+                        else:
+                            sub_dept_doc = db.collection('hrm_sub_departments').document(sub_dept_id).get()
+                            if sub_dept_doc.exists:
+                                sub_dept_name = sub_dept_doc.to_dict().get('name')
                     else:
-                        sub_dept_doc = db.collection('hrm_sub_departments').document(sub_dept_id).get()
-                        if sub_dept_doc.exists:
-                            sub_dept_name = sub_dept_doc.to_dict().get('name')
+                        sub_dept_id = ""
+                        sub_dept_name = "None"
                             
-                    if dept_name and sub_dept_name:
+                    if dept_name:
                         doc_id = request.POST.get('doc_id')
                         if doc_id:
                             update_data = {
-                            'title': title,
-                            'dept_id': dept_id,
-                            'dept_name': dept_name,
-                            'sub_dept_id': sub_dept_id,
-                            'sub_dept_name': sub_dept_name,
-                            'status': status,
-                            'createdAt': firestore.SERVER_TIMESTAMP
-                        }
+                                'title': title,
+                                'dept_id': dept_id,
+                                'dept_name': dept_name,
+                                'sub_dept_id': sub_dept_id,
+                                'sub_dept_name': sub_dept_name,
+                                'status': status,
+                                'createdAt': firestore.SERVER_TIMESTAMP
+                            }
                             if 'createdAt' in update_data:
                                 del update_data['createdAt']
                             db.collection('hrm_positions').document(doc_id).update(update_data)
                         else:
                             db.collection('hrm_positions').add({
-                            'title': title,
-                            'dept_id': dept_id,
-                            'dept_name': dept_name,
-                            'sub_dept_id': sub_dept_id,
-                            'sub_dept_name': sub_dept_name,
-                            'status': status,
-                            'createdAt': firestore.SERVER_TIMESTAMP
-                        })
+                                'title': title,
+                                'dept_id': dept_id,
+                                'dept_name': dept_name,
+                                'sub_dept_id': sub_dept_id,
+                                'sub_dept_name': sub_dept_name,
+                                'status': status,
+                                'createdAt': firestore.SERVER_TIMESTAMP
+                            })
                 except Exception as e:
                     print(f"Error adding position: {e}")
                     
