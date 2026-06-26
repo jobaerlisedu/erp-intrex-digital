@@ -1,84 +1,333 @@
 {% extends 'erp_base.html' %}
 {% block title %}Brand Ambassadors - Intrex ERP{% endblock %}
 {% block content %}
-<div class="flex-between">
-    <h2>Brand Ambassadors Directory</h2>
+
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Brand Ambassadors</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-user-plus"></i> Add Brand Ambassador
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-headset"></i> Brand Ambassadors Directory
+        </button>
+    </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px; align-items: start;">
-    <!-- Add Brand Ambassador Form -->
-    <div class="glass-card">
-        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;">
-            <i class="fa-solid fa-user-plus" style="color: var(--accent-color);"></i> Register Ambassador
+<!-- Tab Content 1: Add Brand Ambassador Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-user-plus" style="color: var(--accent-color);"></i>
+            Add Brand Ambassador
         </h3>
-        <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 16px 0 24px 0;">
-        <form method="POST" action="{% url 'training:brand_ambassadors' %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label>Ambassador Name</label>
-                <input type="text" name="name" class="form-control" required placeholder="e.g. Tanvir Ahmed">
-            </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Email Address</label>
-                <input type="email" name="email" class="form-control" required placeholder="e.g. tanvir@ambassador.com">
-            </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Phone Number</label>
-                <input type="text" name="phone" class="form-control" required placeholder="e.g. 018xxxxxxxx">
-            </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Referrals Count</label>
-                <input type="number" name="referrals" class="form-control" value="0" required>
-            </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Ambassador Earnings (৳)</label>
-                <input type="number" step="0.01" name="earnings" class="form-control" value="0" required>
-            </div>
-            <button type="submit" class="btn-submit" style="width: 100%; margin-top: 24px; padding: 12px;">Save Ambassador</button>
-        </form>
     </div>
 
-    <!-- Ambassadors Table -->
-    <div class="glass-card" style="min-height: 500px;">
-        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.15rem;">
-            <i class="fa-solid fa-bullhorn" style="color: var(--accent-color);"></i> Active Brand Ambassadors
+    <form id="amb-form" method="POST" action="{% url 'training:brand_ambassadors' %}">
+        {% csrf_token %}
+        <input type="hidden" name="doc_id" id="form-doc-id">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Name (Full Width) -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Brand Ambassador Name <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="name" id="form-name" class="form-control" required placeholder="e.g. Hasan Mahmud">
+            </div>
+
+            <!-- Email & Phone (Half Width each) -->
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" id="form-email" class="form-control" placeholder="email@domain.com">
+            </div>
+            <div class="form-group">
+                <label>Mobile Phone <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="phone" id="form-phone" class="form-control" required placeholder="+880 1XXX-XXXXXX">
+            </div>
+
+            <!-- Region / Area (Full Width) -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Region / Area <span style="color: #ef4444;">*</span></label>
+                <select name="region" id="form-region" class="form-control" required>
+                    <option value="" disabled selected>Select region</option>
+                    <option value="Dhaka">Dhaka</option>
+                    <option value="Chattogram">Chattogram</option>
+                    <option value="Sylhet">Sylhet</option>
+                    <option value="Rajshahi">Rajshahi</option>
+                    <option value="Khulna">Khulna</option>
+                    <option value="Barishal">Barishal</option>
+                    <option value="Rangpur">Rangpur</option>
+                    <option value="Mymensingh">Mymensingh</option>
+                    <option value="Nationwide">Nationwide</option>
+                </select>
+            </div>
+
+            <!-- Commission & Status (Half Width each) -->
+            <div class="form-group">
+                <label>Commission (%)</label>
+                <input type="number" name="commissionRate" id="form-commissionRate" min="0" max="100" class="form-control" placeholder="e.g. 15">
+            </div>
+            <div class="form-group">
+                <label>Status <span style="color: #ef4444;">*</span></label>
+                <select name="status" id="form-status" class="form-control" required>
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+
+            <!-- Additional Notes (Full Width) -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Additional Notes</label>
+                <textarea name="notes" id="form-notes" class="form-control" rows="3" placeholder="Details about territory, performance..."></textarea>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="btn-submit" style="padding: 12px 28px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save Brand Ambassador
+            </button>
+            <button type="button" onclick="cancelEditMode()" id="btn-cancel-edit" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Brand Ambassadors Directory -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-headset" style="color: var(--accent-color);"></i>
+            Brand Ambassadors Directory
         </h3>
-        <table class="data-table" style="margin-top: 24px;">
-            <thead>
-                <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
-                    <th style="font-weight: 600; color: var(--text-primary);">Ambassador Name</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Contact info</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Total Referrals</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Earnings (৳)</th>
-                    <th style="font-weight: 600; color: var(--text-primary);">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for amb in ambassadors %}
-                <tr>
-                    <td style="font-weight: 600; color: var(--text-primary);">{{ amb.name }}</td>
-                    <td>
-                        <div>{{ amb.email }}</div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ amb.phone }}</div>
-                    </td>
-                    <td><span class="badge success" style="font-size: 0.85rem;">{{ amb.referrals }} Enrolled</span></td>
-                    <td>৳{{ amb.earnings|floatformat:2 }}</td>
-                    <td>
-                        <form method="POST" action="{% url 'training:brand_ambassadors' %}" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this ambassador?');">
+        <!-- Search and Filters -->
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="search-directory-input" onkeyup="filterDirectoryTable()" class="form-control" style="width: 240px; height: 38px;" placeholder="Search name, region, phone...">
+            <select id="filter-region-select" onchange="filterDirectoryTable()" class="form-control" style="width: 180px; height: 38px;">
+                <option value="">All Regions</option>
+                <option value="Dhaka">Dhaka</option>
+                <option value="Chattogram">Chattogram</option>
+                <option value="Sylhet">Sylhet</option>
+                <option value="Rajshahi">Rajshahi</option>
+                <option value="Khulna">Khulna</option>
+                <option value="Barishal">Barishal</option>
+                <option value="Rangpur">Rangpur</option>
+                <option value="Mymensingh">Mymensingh</option>
+                <option value="Nationwide">Nationwide</option>
+            </select>
+            <button type="button" onclick="location.reload()" style="background: var(--accent-color); color: #fff; border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;" title="Refresh Directory">
+                <i class="fa-solid fa-rotate"></i>
+            </button>
+        </div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1px solid var(--sidebar-border);">
+                <th style="font-weight: 600; color: var(--text-primary);">Ambassador ID</th>
+                <th style="font-weight: 600; color: var(--text-primary);">Brand Ambassador Name</th>
+                <th style="font-weight: 600; color: var(--text-primary);">Contact Info</th>
+                <th style="font-weight: 600; color: var(--text-primary);">Region</th>
+                <th style="font-weight: 600; color: var(--text-primary);">Commission</th>
+                <th style="font-weight: 600; color: var(--text-primary);">Status</th>
+                <th style="font-weight: 600; color: var(--text-primary);">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="directory-table-body">
+            {% for amb in ambassadors %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color); font-family: monospace;">{{ amb.id }}</td>
+                <td style="font-weight: 600; color: var(--text-primary);">{{ amb.name }}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-secondary);">
+                        <i class="fa-solid fa-phone" style="font-size: 0.8rem; width: 14px;"></i> {{ amb.phone }}
+                    </div>
+                    {% if amb.email %}
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        <i class="fa-solid fa-envelope" style="font-size: 0.8rem; width: 14px;"></i> {{ amb.email }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge" style="background: rgba(0,0,0,0.03); color: var(--text-primary); border: 1px solid var(--sidebar-border);">{{ amb.region }}</span>
+                </td>
+                <td style="font-weight: 600; color: var(--text-primary);">
+                    {{ amb.commissionRate|floatformat:0 }}%
+                </td>
+                <td>
+                    {% if amb.status == 'Active' %}
+                    <span class="badge success">Active</span>
+                    {% else %}
+                    <span class="badge danger">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 8px; align-items: center; margin: 0;">
+                        <button type="button" onclick="viewDetails('{{ amb.id }}')" class="btn-action view" style="background: rgba(33, 92, 92, 0.1); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 4px; padding: 4px 8px;" title="View Details">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        
+                        <button type="button" onclick="enterEditMode('{{ amb.id }}')" class="btn-action edit" style="background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid #d97706; border-radius: 4px; padding: 4px 8px;" title="Edit">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        
+                        <form method="POST" action="{% url 'training:brand_ambassadors' %}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this ambassador?');">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="doc_id" value="{{ amb.id }}">
-                            <button type="submit" class="btn-action delete"><i class="fa-solid fa-trash-can"></i></button>
+                            <button type="submit" class="btn-action delete" style="background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid #dc2626; border-radius: 4px; padding: 4px 8px;" title="Delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 48px;">No ambassadors found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 48px;">No ambassadors found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+
+<script>
+    // Load brand ambassadors raw array
+    const ambassadorDb = JSON.parse('{{ ambassadors_json|escapejs }}');
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function filterDirectoryTable() {
+        const query = document.getElementById("search-directory-input").value.toLowerCase();
+        const regionFilter = document.getElementById("filter-region-select").value;
+        const rows = document.querySelectorAll("#directory-table-body tr");
+
+        rows.forEach(r => {
+            const cells = r.getElementsByTagName("td");
+            if (cells.length < 6) return;
+
+            const id = cells[0].innerText.toLowerCase();
+            const name = cells[1].innerText.toLowerCase();
+            const contact = cells[2].innerText.toLowerCase();
+            const region = cells[3].innerText.trim();
+
+            const matchesQuery = id.includes(query) || name.includes(query) || contact.includes(query);
+            const matchesRegion = !regionFilter || region === regionFilter;
+
+            if (matchesQuery && matchesRegion) {
+                r.style.display = '';
+            } else {
+                r.style.display = 'none';
+            }
+        });
+    }
+
+    function enterEditMode(docId) {
+        const record = ambassadorDb.find(a => a.id === docId);
+        if (!record) return;
+
+        switchTab('form');
+        document.getElementById("form-title").innerHTML = `<i class="fa-solid fa-user-pen" style="color: var(--accent-color); margin-right: 8px;"></i> Edit Brand Ambassador Contact`;
+        
+        // Fill form fields
+        document.getElementById("form-doc-id").value = record.id;
+        document.getElementById("form-name").value = record.name || '';
+        document.getElementById("form-email").value = record.email || '';
+        document.getElementById("form-phone").value = record.phone || '';
+        document.getElementById("form-region").value = record.region || '';
+        document.getElementById("form-commissionRate").value = record.commissionRate !== undefined ? record.commissionRate : '';
+        document.getElementById("form-status").value = record.status || 'Active';
+        document.getElementById("form-notes").value = record.notes || '';
+
+        // Show cancel button
+        document.getElementById("btn-cancel-edit").style.display = 'block';
+        
+        // Scroll to form view
+        document.getElementById("tab-form").scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEditMode() {
+        document.getElementById("amb-form").reset();
+        document.getElementById("form-doc-id").value = '';
+        document.getElementById("btn-cancel-edit").style.display = 'none';
+        document.getElementById("form-title").innerHTML = `<i class="fa-solid fa-user-plus" style="color: var(--accent-color); margin-right: 8px;"></i> Add Brand Ambassador`;
+    }
+
+    function viewDetails(docId) {
+        const record = ambassadorDb.find(a => a.id === docId);
+        if (!record) return;
+
+        const notes = record.notes ? record.notes : "— Not Specified —";
+        const email = record.email ? `<i class="fa-solid fa-envelope" style="color: var(--accent-color); margin-right: 8px;"></i>${record.email}` : "— Not Specified —";
+        const phone = record.phone ? `<i class="fa-solid fa-phone" style="color: var(--accent-color); margin-right: 8px;"></i>${record.phone}` : "— Not Specified —";
+        const statusClass = record.status === 'Active' ? 'success' : 'danger';
+        const commRate = record.commissionRate !== undefined ? record.commissionRate : 0;
+
+        const htmlContent = `
+            <div class="view-detail-grid">
+                <div class="view-detail-item">
+                    <div class="view-detail-label">AGENT ID</div>
+                    <div class="view-detail-value">
+                        <span style="font-family: monospace; border: 1px solid var(--sidebar-border); padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.02); font-weight: 700; color: var(--accent-color);">${record.id}</span>
+                    </div>
+                </div>
+                <div class="view-detail-item">
+                    <div class="view-detail-label">AGENT NAME</div>
+                    <div class="view-detail-value">${record.name}</div>
+                </div>
+                <div class="view-detail-item">
+                    <div class="view-detail-label">EMAIL ADDRESS</div>
+                    <div class="view-detail-value">${email}</div>
+                </div>
+                <div class="view-detail-item">
+                    <div class="view-detail-label">MOBILE PHONE</div>
+                    <div class="view-detail-value">${phone}</div>
+                </div>
+                <div class="view-detail-item">
+                    <div class="view-detail-label">REGION / AREA</div>
+                    <div class="view-detail-value">
+                        <span class="badge success" style="font-size: 0.85rem;">${record.region}</span>
+                    </div>
+                </div>
+                <div class="view-detail-item">
+                    <div class="view-detail-label">COMMISSION RATE (%)</div>
+                    <div class="view-detail-value">${commRate}</div>
+                </div>
+                <div class="view-detail-item">
+                    <div class="view-detail-label">STATUS</div>
+                    <div class="view-detail-value">
+                        <span class="badge ${statusClass}">${record.status}</span>
+                    </div>
+                </div>
+                <div class="view-detail-item" style="grid-column: span 2;">
+                    <div class="view-detail-label">ADDITIONAL NOTES</div>
+                    <div class="view-detail-value" style="white-space: pre-wrap; font-weight: normal; color: var(--text-secondary);">${notes}</div>
+                </div>
+            </div>
+        `;
+
+        openGlobalModal("Brand Ambassador Details - " + record.id, htmlContent, record.name, "AGENT PROFILE");
+    }
+</script>
 {% endblock %}

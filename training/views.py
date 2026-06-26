@@ -344,13 +344,19 @@ def brand_ambassadors(request):
             if is_new:
                 doc_id = get_next_seq_id('learn_brand_ambassadors', 'AMB-', 'id', 4)
             
+            comm_rate_str = request.POST.get('commissionRate')
+            try:
+                commission_rate = float(comm_rate_str) if comm_rate_str else 0.0
+            except ValueError:
+                commission_rate = 0.0
+
             data = {
                 'id': doc_id,
                 'name': request.POST.get('name'),
                 'email': request.POST.get('email'),
                 'phone': request.POST.get('phone'),
                 'region': request.POST.get('region'),
-                'commissionRate': float(request.POST.get('commissionRate', 0.0)),
+                'commissionRate': commission_rate,
                 'status': request.POST.get('status', 'Active'),
                 'notes': request.POST.get('notes'),
             }
@@ -368,7 +374,11 @@ def brand_ambassadors(request):
         return redirect('training:brand_ambassadors')
 
     ambassadors = get_collection_data('learn_brand_ambassadors')
-    return render(request, 'training/brand_ambassadors.html', {'ambassadors': ambassadors})
+    ambassadors_json = json.dumps(ambassadors, default=str)
+    return render(request, 'training/brand_ambassadors.html', {
+        'ambassadors': ambassadors,
+        'ambassadors_json': ambassadors_json
+    })
 
 @module_access('training')
 def course_creation(request):
