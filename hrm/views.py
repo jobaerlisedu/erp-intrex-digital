@@ -293,6 +293,7 @@ def department(request):
                     update_data = {
                     'name': request.POST.get('name'),
                     'status': request.POST.get('status', 'Active'),
+                    'module_linking': request.POST.get('module_linking', ''),
                     'notes': request.POST.get('notes', ''),
                     'createdAt': firestore.SERVER_TIMESTAMP
                 }
@@ -303,6 +304,7 @@ def department(request):
                     db.collection('hrm_departments').add({
                     'name': request.POST.get('name'),
                     'status': request.POST.get('status', 'Active'),
+                    'module_linking': request.POST.get('module_linking', ''),
                     'notes': request.POST.get('notes', ''),
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })

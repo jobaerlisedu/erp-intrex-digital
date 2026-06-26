@@ -124,6 +124,19 @@
             </div>
             
             <div class="form-group" style="margin-top: 20px;">
+                <label>ERP Module Linking</label>
+                <select name="module_linking" class="form-control">
+                    <option value="">None</option>
+                    <option value="hrm">Human Resource Management (HRM)</option>
+                    <option value="training">Training Academy (Training)</option>
+                    <option value="solutions">IT Solutions & Projects (Solutions)</option>
+                    <option value="inventory">Asset & Inventory (Inventory)</option>
+                    <option value="billing">Billing & Finance (Billing)</option>
+                    <option value="investment">Shareholders & Investments (Investment)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
                 <label>Additional Notes</label>
                 <textarea name="notes" class="form-control" placeholder="Details about this department..." style="height: 100px; resize: none; font-family: inherit;"></textarea>
             </div>
@@ -165,9 +178,23 @@
                 {% for d in departments %}
                 <tr class="dept-row" data-name="{{ d.name }}" data-status="{{ d.status }}">
                     <td>
-                        <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ d.name }}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ d.name }}</strong>
+                            {% if d.module_linking %}
+                            <span class="badge info" style="font-size: 0.72rem; padding: 2px 6px; text-transform: uppercase; font-weight: 600; background: rgba(33, 150, 243, 0.1); color: #2196f3; border: 1px solid rgba(33, 150, 243, 0.2);">
+                                {% if d.module_linking == 'hrm' %}HRM
+                                {% elif d.module_linking == 'training' %}Training
+                                {% elif d.module_linking == 'solutions' %}Solutions
+                                {% elif d.module_linking == 'inventory' %}Inventory
+                                {% elif d.module_linking == 'billing' %}Billing
+                                {% elif d.module_linking == 'investment' %}Investment
+                                {% else %}{{ d.module_linking }}
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
                         {% if d.notes %}
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ d.notes }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">{{ d.notes }}</div>
                         {% endif %}
                     </td>
                     <td>
