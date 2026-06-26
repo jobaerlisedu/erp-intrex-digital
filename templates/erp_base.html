@@ -583,11 +583,64 @@
             </li>
             {% endif %}
             {% if 'investment' in user_modules %}
-            <li>
-                <a href="{% url 'investment:index' %}" class="nav-link {% if request.resolver_match.namespace == 'investment' %}active{% endif %}">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <span>Investment</span>
+            <li class="nav-item-dropdown {% if request.resolver_match.namespace == 'investment' %}active open{% endif %}">
+                <a href="#" class="nav-link dropdown-toggle" onclick="toggleDropdown(event, 'investment-dropdown')">
+                    <span style="display: flex; align-items: center; gap: 14px;">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Investment</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down dropdown-caret"></i>
                 </a>
+                <ul id="investment-dropdown" class="submenu-links {% if request.resolver_match.namespace == 'investment' %}show{% endif %}">
+                    <li>
+                        <a href="{% url 'investment:index' %}" class="submenu-link {% if request.resolver_match.namespace == 'investment' and request.resolver_match.url_name == 'index' %}active{% endif %}">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:investor_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'investor_list' %}active{% endif %}">
+                            <i class="fa-solid fa-user-tie"></i>
+                            <span>Investors (CRM)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:inbound_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'inbound_list' %}active{% endif %}">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                            <span>Inbound Capital</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:loans_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'loans_list' %}active{% endif %}">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                            <span>Investor Loans</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:outbound_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'outbound_list' %}active{% endif %}">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            <span>Outbound Placements</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:instruments_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'instruments_list' %}active{% endif %}">
+                            <i class="fa-solid fa-file-signature"></i>
+                            <span>Securities Registry</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:pl_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'pl_list' %}active{% endif %}">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                            <span>Profit & Loss</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'investment:payables_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'payables_list' %}active{% endif %}">
+                            <i class="fa-solid fa-wallet"></i>
+                            <span>Liabilities & Payables</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
             {% endif %}
             {% if 'billing' in user_modules %}

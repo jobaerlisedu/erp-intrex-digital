@@ -1,0 +1,282 @@
+{% extends 'erp_base.html' %}
+{% block title %}Investors (CRM) - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    .badge.individual { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge.institutional { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+    .badge.vc { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.2); }
+    .badge.angel { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Investors (CRM)</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-user-plus"></i> Add Investor Profile
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-users"></i> Investor Directory
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Add/Edit Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-user-plus" style="color: var(--accent-color);"></i>
+            Add Investor Profile
+        </h3>
+    </div>
+    
+    <form method="POST" action="{% url 'investment:investor_list' %}" id="investorForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_investor">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Full Name / Entity Name <span class="asterisk">*</span></label>
+                <input type="text" name="name" id="name" class="form-control" required placeholder="e.g. John Doe / Acme Corp">
+            </div>
+
+            <div class="form-group">
+                <label>Category <span class="asterisk">*</span></label>
+                <select name="category" id="category" class="form-control" required>
+                    <option value="Individual">Individual</option>
+                    <option value="Institutional">Institutional</option>
+                    <option value="Venture Capital">Venture Capital (VC)</option>
+                    <option value="Angel">Angel</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>KYC Status <span class="asterisk">*</span></label>
+                <select name="kyc_status" id="kyc_status" class="form-control" required>
+                    <option value="Pending">Pending</option>
+                    <option value="Verified">Verified</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" id="email" class="form-control" placeholder="investor@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Contact Phone</label>
+                <input type="text" name="phone" id="phone" class="form-control" placeholder="+123456789">
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Tax ID / Registration Code</label>
+                <input type="text" name="tax_id" id="tax_id" class="form-control" placeholder="e.g. EIN-12345">
+            </div>
+        </div>
+
+        <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 20px; margin: 24px 0 16px 0; color: var(--accent-color); font-size: 0.95rem; letter-spacing: 0.05em; font-weight: 700; text-transform: uppercase;">Banking Information</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Account Holder Name</label>
+                <input type="text" name="bank_account_name" id="bank_account_name" class="form-control" placeholder="e.g. John Doe">
+            </div>
+
+            <div class="form-group">
+                <label>Account Number</label>
+                <input type="text" name="bank_account_number" id="bank_account_number" class="form-control" placeholder="XXXX-XXXX-XXXX">
+            </div>
+            
+            <div class="form-group">
+                <label>Routing Transit Code</label>
+                <input type="text" name="bank_routing_code" id="bank_routing_code" class="form-control" placeholder="e.g. RTN-021000021">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Save Profile
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Directory List -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-users" style="color: var(--accent-color);"></i>
+            Investor Directory
+        </h3>
+        <input type="text" id="search-investor" onkeyup="filterInvestors()" class="form-control" placeholder="Search investor..." style="width: 240px; height: 38px;">
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>KYC Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="investor-tbody">
+            {% for inv in investors %}
+            <tr class="investor-row" data-name="{{ inv.name }}" data-code="{{ inv.investor_code }}">
+                <td style="font-weight: 700; color: var(--accent-color);">{{ inv.investor_code }}</td>
+                <td>
+                    <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ inv.name }}</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">{{ inv.email }}</div>
+                </td>
+                <td>
+                    <span class="badge {{ inv.category|lower }}">{{ inv.category }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if inv.kyc_status == 'Verified' %}success{% elif inv.kyc_status == 'Pending' %}warning{% else %}danger{% endif %}">
+                        {{ inv.kyc_status }}
+                    </span>
+                </td>
+                <td>
+                    {{ inv|json_script:inv.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action view" onclick="viewDetails('{{ inv.id }}')" title="View Bank Details"><i class="fa-solid fa-eye"></i></button>
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ inv.id }}')" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'investment:investor_list' %}" style="margin:0;" onsubmit="return confirm('Delete this investor profile?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_investor">
+                            <input type="hidden" name="doc_id" value="{{ inv.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Profile"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr class="no-data-row">
+                <td colspan="5" style="text-align: center; padding: 48px; color: var(--text-secondary);">No investors found in CRM.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function filterInvestors() {
+        const q = document.getElementById('search-investor').value.toLowerCase();
+        document.querySelectorAll('.investor-row').forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const code = row.getAttribute('data-code').toLowerCase();
+            if (name.includes(q) || code.includes(q)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function editRecord(id) {
+        const data = JSON.parse(document.getElementById(id).textContent);
+        
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('name').value = data.name || '';
+        document.getElementById('category').value = data.category || 'Individual';
+        document.getElementById('kyc_status').value = data.kyc_status || 'Pending';
+        document.getElementById('tax_id').value = data.tax_id || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('phone').value = data.phone || '';
+        document.getElementById('bank_account_name').value = data.bank_account_name || '';
+        document.getElementById('bank_account_number').value = data.bank_account_number || '';
+        document.getElementById('bank_routing_code').value = data.bank_routing_code || '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Investor Profile';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Profile';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('investorForm').reset();
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-plus" style="color: var(--accent-color);"></i> Add Investor Profile';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Save Profile';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+
+    function viewDetails(id) {
+        const data = JSON.parse(document.getElementById(id).textContent);
+        const modalHtml = `
+            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Category:</strong>
+                        <div style="font-weight: 600;">${data.category}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">KYC Verification:</strong>
+                        <div style="font-weight: 600;">${data.kyc_status}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Tax ID / Registration:</strong>
+                        <div>${data.tax_id || '--'}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Phone Number:</strong>
+                        <div>${data.phone || '--'}</div>
+                    </div>
+                </div>
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color);">BANKING INFORMATION</h4>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Account Holder:</strong>
+                        <div style="font-weight: 600;">${data.bank_account_name || '--'}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Account Number:</strong>
+                        <div style="font-weight: 600; letter-spacing: 0.05em;">${data.bank_account_number || '--'}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Routing Transit Code:</strong>
+                        <div style="font-weight: 600;">${data.bank_routing_code || '--'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        openGlobalModal(`INVESTOR DETAIL PROFILE (${data.investor_code})`, modalHtml, data.name);
+    }
+</script>
+{% endblock %}

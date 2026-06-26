@@ -1,0 +1,174 @@
+{% extends 'erp_base.html' %}
+{% block title %}Profit & Loss Ledger - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Profit & Loss</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Add Monthly Profit/Loss
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-calculator"></i> Monthly Profit & Loss Ledger
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Add Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Add Monthly Profit/Loss
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'investment:pl_list' %}" id="plForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_pl_entry">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Target Month <span class="asterisk">*</span></label>
+                <input type="month" name="month" id="month" class="form-control" required>
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 4px;">Selecting the month will auto-calculate scheduled investor loan interest liabilities for that period.</small>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Operational Revenue ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="revenue" id="revenue" class="form-control" required placeholder="0.00">
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Operational Expenses (OpEx) ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="opex" id="opex" class="form-control" required placeholder="0.00">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Record P&L Summary
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: P&L List Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-calculator" style="color: var(--accent-color);"></i>
+            Monthly Profit & Loss Ledger
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Revenue</th>
+                <th>OpEx</th>
+                <th>Investor Interest Paid</th>
+                <th>Net Profit / Margin</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pl in pl_entries %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ pl.month }}</td>
+                <td>${{ pl.revenue|floatformat:2 }}</td>
+                <td>${{ pl.opex|floatformat:2 }}</td>
+                <td style="color: #f59e0b; font-weight: 500;">-${{ pl.interest_expense|floatformat:2 }}</td>
+                <td style="font-weight: 700; {% if pl.net_profit >= 0 %}color: #10b981;{% else %}color: #ef4444;{% endif %}">
+                    ${{ pl.net_profit|floatformat:2 }}
+                </td>
+                <td>
+                    {{ pl|json_script:pl.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ pl.id }}')" title="Edit Entry"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'investment:pl_list' %}" style="margin:0;" onsubmit="return confirm('Delete this P&L monthly snapshot?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_pl">
+                            <input type="hidden" name="doc_id" value="{{ pl.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Snapshot"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-secondary);">No P&L summaries logged yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('month');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 7);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = JSON.parse(document.getElementById(id).textContent);
+        
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('month').value = data.month || '';
+        document.getElementById('revenue').value = data.revenue || '';
+        document.getElementById('opex').value = data.opex || '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit P&L Summary';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Summary';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('plForm').reset();
+        document.getElementById('month').value = new Date().toISOString().substring(0, 7);
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Add Monthly Profit/Loss';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Record P&L Summary';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

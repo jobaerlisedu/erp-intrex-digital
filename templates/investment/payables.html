@@ -1,0 +1,127 @@
+{% extends 'erp_base.html' %}
+{% block title %}Liabilities & Payables - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-unpaid {
+        background: rgba(239, 68, 68, 0.1) !important;
+        color: #ef4444 !important;
+        border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    }
+    .status-paid {
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #10b981 !important;
+        border: 1px solid rgba(16, 185, 129, 0.2) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Liabilities & Payables</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-list-btn" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-business-time"></i> Amortization Servicing Calendar
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content: Calendar List -->
+<div id="tab-list" class="glass-card" style="min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-wallet" style="color: var(--accent-color);"></i>
+            Payables Ledger
+        </h3>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="search-payable" onkeyup="filterPayables()" class="form-control" placeholder="Search investor..." style="width: 240px; height: 38px;">
+            <select id="filter-payable-status" onchange="filterPayables()" class="form-control" style="width: 180px; height: 38px;">
+                <option value="all">All Status</option>
+                <option value="Unpaid" selected>Unpaid / Due</option>
+                <option value="Paid">Paid / Cleared</option>
+            </select>
+        </div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Investor</th>
+                <th>Inst #</th>
+                <th>Due Date</th>
+                <th>Principal Due</th>
+                <th>Interest Due</th>
+                <th>Total Amortized</th>
+                <th>Status</th>
+                <th>Clear Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="payables-tbody">
+            {% for s in schedules %}
+            <tr class="schedule-row" data-investor="{{ s.investor_name }}" data-status="{{ s.payment_status }}" data-loan-id="{{ s.loan_id }}">
+                <td><strong style="color: var(--text-primary);" class="investor-name">{{ s.investor_name }}</strong></td>
+                <td><span class="inst-num">{{ s.installment_number }}</span></td>
+                <td><span class="due-date">{{ s.due_date }}</span></td>
+                <td><span class="principal-due">${{ s.scheduled_principal|floatformat:2 }}</span></td>
+                <td><span class="interest-due">${{ s.scheduled_interest|floatformat:2 }}</span></td>
+                <td style="font-weight: 600; color: var(--text-primary);">${{ s.scheduled_principal|add:s.scheduled_interest|floatformat:2 }}</td>
+                <td>
+                    <span class="badge payment-status {% if s.payment_status == 'Paid' %}status-paid{% else %}status-unpaid{% endif %}">
+                        {{ s.payment_status }}
+                    </span>
+                </td>
+                <td><span class="cleared-date">{{ s.actual_payment_date }}</span></td>
+                <td>
+                    {% if s.payment_status == 'Unpaid' %}
+                    <form method="POST" action="{% url 'investment:payables_list' %}" style="margin: 0;" onsubmit="return confirm('Mark this installment payment as cleared/disbursed?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="clear_payment">
+                        <input type="hidden" name="schedule_id" value="{{ s.id }}">
+                        <button type="submit" class="btn-submit" style="padding: 6px 12px; font-size: 0.78rem; background-color: #10b981; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-circle-check"></i> Pay
+                        </button>
+                    </form>
+                    {% else %}
+                    <span style="color: #10b981; font-weight: 600; font-size: 0.8rem;"><i class="fa-solid fa-circle-check"></i> Cleared</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 48px; color: var(--text-secondary);">No amortization schedule schedules found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        filterPayables();
+    });
+
+    function filterPayables() {
+        const q = document.getElementById('search-payable').value.toLowerCase();
+        const status = document.getElementById('filter-payable-status').value;
+        
+        document.querySelectorAll('.schedule-row').forEach(row => {
+            const investor = row.getAttribute('data-investor').toLowerCase();
+            const rowStatus = row.getAttribute('data-status');
+            
+            const matchQ = investor.includes(q);
+            const matchStatus = (status === 'all' || rowStatus === status);
+            
+            if (matchQ && matchStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

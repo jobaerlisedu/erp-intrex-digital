@@ -1,0 +1,204 @@
+{% extends 'erp_base.html' %}
+{% block title %}Securities Registry - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Securities Registry</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Register Security
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-gem"></i> Securities Registry
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Add Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Register Security
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'investment:instruments_list' %}" id="instrumentForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_instrument">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label>Instrument Code <span class="asterisk">*</span></label>
+                <input type="text" name="instrument_code" id="instrument_code" class="form-control" required placeholder="e.g. US-ISIN-123">
+            </div>
+            
+            <div class="form-group">
+                <label>Type <span class="asterisk">*</span></label>
+                <select name="type" id="type" class="form-control" required>
+                    <option value="Common Stock">Common Stock</option>
+                    <option value="Preferred Stock">Preferred Stock</option>
+                    <option value="Corporate Bond">Corporate Bond</option>
+                    <option value="Debenture">Debenture</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Face Value ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="face_value" id="face_value" class="form-control" required placeholder="10.00">
+            </div>
+            
+            <div class="form-group">
+                <label>Coupon Rate (% / Annual)</label>
+                <input type="number" step="0.01" name="coupon_rate" id="coupon_rate" class="form-control" placeholder="Bonds only, e.g. 5.25">
+            </div>
+
+            <div class="form-group">
+                <label>Total Units Issued <span class="asterisk">*</span></label>
+                <input type="number" name="total_units_issued" id="total_units_issued" class="form-control" required placeholder="e.g. 1000000">
+            </div>
+            
+            <div class="form-group">
+                <label>Units Outstanding <span class="asterisk">*</span></label>
+                <input type="number" name="units_outstanding" id="units_outstanding" class="form-control" required placeholder="e.g. 850000">
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Issue Date <span class="asterisk">*</span></label>
+                <input type="date" name="issue_date" id="issue_date" class="form-control" required>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Save Instrument
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Registry List -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-gem" style="color: var(--accent-color);"></i>
+            Registered Securities
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Face Value</th>
+                <th>Coupon Rate</th>
+                <th>Issued Units</th>
+                <th>Outstanding</th>
+                <th>Issue Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inst in instruments %}
+            <tr>
+                <td style="font-weight: 700; color: var(--accent-color);">{{ inst.instrument_code }}</td>
+                <td>{{ inst.type }}</td>
+                <td>${{ inst.face_value|floatformat:2 }}</td>
+                <td>{% if inst.coupon_rate %}{{ inst.coupon_rate }}%{% else %}--{% endif %}</td>
+                <td>{{ inst.total_units_issued }}</td>
+                <td>{{ inst.units_outstanding }}</td>
+                <td>{{ inst.issue_date }}</td>
+                <td>
+                    {{ inst|json_script:inst.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ inst.id }}')" title="Edit Instrument"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'investment:instruments_list' %}" style="margin:0;" onsubmit="return confirm('Delete this financial instrument registry?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_instrument">
+                            <input type="hidden" name="doc_id" value="{{ inst.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Instrument"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 48px; color: var(--text-secondary);">No securities registered yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('issue_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = JSON.parse(document.getElementById(id).textContent);
+        
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('instrument_code').value = data.instrument_code || '';
+        document.getElementById('type').value = data.type || 'Common Stock';
+        document.getElementById('face_value').value = data.face_value || '';
+        document.getElementById('coupon_rate').value = data.coupon_rate || '';
+        document.getElementById('total_units_issued').value = data.total_units_issued || '';
+        document.getElementById('units_outstanding').value = data.units_outstanding || '';
+        document.getElementById('issue_date').value = data.issue_date || '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Registered Security';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Security';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('instrumentForm').reset();
+        document.getElementById('issue_date').value = new Date().toISOString().substring(0, 10);
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Register Security';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Save Instrument';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

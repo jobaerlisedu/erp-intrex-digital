@@ -1,0 +1,220 @@
+{% extends 'erp_base.html' %}
+{% block title %}Inbound Capital - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Inbound Capital</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Log Inbound Capital
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-list-check"></i> Capital Inflow Ledger
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Log Inbound Capital Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Log Inbound Capital
+        </h3>
+    </div>
+
+    {% if not investors %}
+    <div style="text-align: center; padding: 48px; color: var(--text-secondary);">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; color: #f59e0b; margin-bottom: 16px;"></i>
+        <p style="font-size: 1.05rem; font-weight: 600; margin: 0 0 8px 0;">No registered investors</p>
+        <p style="margin: 0 0 20px 0;">Please register at least one investor in CRM before logging inbound capital.</p>
+        <a href="{% url 'investment:investor_list' %}" class="btn-submit" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 20px;">
+            <i class="fa-solid fa-user-plus"></i> Go to CRM
+        </a>
+    </div>
+    {% else %}
+    <form method="POST" action="{% url 'investment:inbound_list' %}" id="inboundForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_inbound">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Select Investor <span class="asterisk">*</span></label>
+                <select name="investor_id" id="investor_id" class="form-control" required>
+                    <option value="" disabled selected>Select Investor...</option>
+                    {% for inv in investors %}
+                    <option value="{{ inv.id }}">{{ inv.name }} ({{ inv.investor_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Invested Capital Amount ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="amount" id="amount" class="form-control" required placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label>Payment Method <span class="asterisk">*</span></label>
+                <select name="payment_method" id="payment_method" class="form-control" required>
+                    <option value="Bank Wire">Bank Wire</option>
+                    <option value="ACH">ACH Transfer</option>
+                    <option value="Check">Check</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Value Date <span class="asterisk">*</span></label>
+                <input type="date" name="value_date" id="value_date" class="form-control" required>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Clearance Status <span class="asterisk">*</span></label>
+                <select name="status" id="status" class="form-control" required>
+                    <option value="Cleared">Cleared</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Failed">Failed</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Notes / Memo</label>
+                <textarea name="notes" id="notes" class="form-control" style="height: 100px; resize: none; font-family: inherit;" placeholder="Optional transaction details..."></textarea>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Record Capital Influx
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Tab Content 2: Ledger Table -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-list-check" style="color: var(--accent-color);"></i>
+            Capital Inflow Ledger
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Investor</th>
+                <th>Value Date</th>
+                <th>Payment Method</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr>
+                <td>
+                    <strong style="color: var(--text-primary);">{{ tx.investor_name }}</strong>
+                    {% if tx.notes %}<div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">{{ tx.notes }}</div>{% endif %}
+                </td>
+                <td>{{ tx.value_date }}</td>
+                <td>{{ tx.payment_method }}</td>
+                <td style="font-weight: 700; color: #10b981;">+${{ tx.amount|floatformat:2 }}</td>
+                <td>
+                    <span class="badge {% if tx.status == 'Cleared' %}success{% elif tx.status == 'Pending' %}warning{% else %}danger{% endif %}">
+                        {{ tx.status }}
+                    </span>
+                </td>
+                <td>
+                    {{ tx|json_script:tx.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ tx.id }}')" title="Edit Influx"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'investment:inbound_list' %}" style="margin:0;" onsubmit="return confirm('Delete this inbound transaction record?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_inbound">
+                            <input type="hidden" name="doc_id" value="{{ tx.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Transaction"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-secondary);">No inbound transactions recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('value_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = JSON.parse(document.getElementById(id).textContent);
+        
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('investor_id').value = data.investor_id || '';
+        document.getElementById('amount').value = data.amount || '';
+        document.getElementById('payment_method').value = data.payment_method || 'Bank Wire';
+        document.getElementById('value_date').value = data.value_date || '';
+        document.getElementById('status').value = data.status || 'Cleared';
+        document.getElementById('notes').value = data.notes || '';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Influx Record';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Record';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('inboundForm').reset();
+        document.getElementById('value_date').value = new Date().toISOString().substring(0, 10);
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Log Inbound Capital';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Record Capital Influx';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}

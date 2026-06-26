@@ -1,0 +1,233 @@
+{% extends 'erp_base.html' %}
+{% block title %}Investor Loans - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Investor Loans</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Issue Investor Loan
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-file-contract"></i> Active Loans & Liabilities
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Issue Loan Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Issue Investor Loan
+        </h3>
+    </div>
+
+    {% if not investors %}
+    <div style="text-align: center; padding: 48px; color: var(--text-secondary);">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; color: #f59e0b; margin-bottom: 16px;"></i>
+        <p style="font-size: 1.05rem; font-weight: 600; margin: 0 0 8px 0;">No registered investors</p>
+        <p style="margin: 0 0 20px 0;">Please register at least one investor in CRM before issuing loan liability schedules.</p>
+        <a href="{% url 'investment:investor_list' %}" class="btn-submit" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 20px;">
+            <i class="fa-solid fa-user-plus"></i> Go to CRM
+        </a>
+    </div>
+    {% else %}
+    <form method="POST" action="{% url 'investment:loans_list' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_loan">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Select Investor <span class="asterisk">*</span></label>
+                <select name="investor_id" class="form-control" required>
+                    <option value="" disabled selected>Select Investor...</option>
+                    {% for inv in investors %}
+                    <option value="{{ inv.id }}">{{ inv.name }} ({{ inv.investor_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Principal Amount ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="principal_amount" class="form-control" required placeholder="0.00">
+            </div>
+            
+            <div class="form-group">
+                <label>Interest Rate (Annual %) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="interest_rate" class="form-control" required placeholder="e.g. 8.5">
+            </div>
+
+            <div class="form-group">
+                <label>Tenure (Months) <span class="asterisk">*</span></label>
+                <input type="number" name="tenure_months" class="form-control" required placeholder="e.g. 12">
+            </div>
+            
+            <div class="form-group">
+                <label>Disbursement Date <span class="asterisk">*</span></label>
+                <input type="date" name="disbursement_date" id="disbursement_date" class="form-control" required>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-calculator"></i> Save & Generate Schedule
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Tab Content 2: Active Loans List -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-file-contract" style="color: var(--accent-color);"></i>
+            Active Loans & Liabilities
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Investor</th>
+                <th>Principal</th>
+                <th>Rate</th>
+                <th>Tenure</th>
+                <th>Disbursed</th>
+                <th>Outstanding</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for loan in loans %}
+            <tr>
+                <td style="font-weight: 600; color: var(--text-primary);">{{ loan.investor_name }}</td>
+                <td>${{ loan.principal_amount|floatformat:2 }}</td>
+                <td>{{ loan.interest_rate }}%</td>
+                <td>{{ loan.tenure_months }} Mos</td>
+                <td>{{ loan.disbursement_date }}</td>
+                <td style="font-weight: 700; color: #ef4444;">${{ loan.outstanding_balance|floatformat:2 }}</td>
+                <td>
+                    <span class="badge {% if loan.status == 'Active' %}success{% else %}warning{% endif %}">
+                        {{ loan.status }}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-group">
+                        <button type="button" class="btn-action view" onclick="viewSchedule('{{ loan.id }}')" title="View Schedule"><i class="fa-solid fa-calendar-days"></i></button>
+                        <form method="POST" action="{% url 'investment:loans_list' %}" style="margin:0;" onsubmit="return confirm('Delete this loan and its amortization schedules?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_loan">
+                            <input type="hidden" name="doc_id" value="{{ loan.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Loan"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 48px; color: var(--text-secondary);">No loans recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('disbursement_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    async function viewSchedule(loanId) {
+        // Fetch all amortization schedules
+        const response = await fetch('{% url "investment:payables_list" %}');
+        const text = await response.text();
+        
+        // Parse HTML to extract amortization schedule rows for this loanId
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const rows = doc.querySelectorAll('.schedule-row');
+        
+        let modalBody = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Inst #</th>
+                        <th>Due Date</th>
+                        <th>Principal Due</th>
+                        <th>Interest Due</th>
+                        <th>Status</th>
+                        <th>Cleared Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        let found = false;
+        rows.forEach(row => {
+            const rowLoanId = row.getAttribute('data-loan-id');
+            if (rowLoanId === loanId) {
+                found = true;
+                const inst = row.querySelector('.inst-num').innerText;
+                const date = row.querySelector('.due-date').innerText;
+                const principal = row.querySelector('.principal-due').innerText;
+                const interest = row.querySelector('.interest-due').innerText;
+                const status = row.querySelector('.payment-status').outerHTML;
+                const cleared = row.querySelector('.cleared-date').innerText;
+                
+                modalBody += `
+                    <tr>
+                        <td><strong>${inst}</strong></td>
+                        <td>${date}</td>
+                        <td>${principal}</td>
+                        <td>${interest}</td>
+                        <td>${status}</td>
+                        <td>${cleared}</td>
+                    </tr>
+                `;
+            }
+        });
+        
+        if (!found) {
+            modalBody += `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No schedule details found.</td></tr>`;
+        }
+        
+        modalBody += `</tbody></table>`;
+        openGlobalModal("LOAN AMORTIZATION SCHEDULE", modalBody, "Servicing Breakdown Plan");
+    }
+</script>
+{% endblock %}

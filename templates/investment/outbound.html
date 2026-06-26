@@ -1,0 +1,210 @@
+{% extends 'erp_base.html' %}
+{% block title %}Outbound Placements - Intrex ERP{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom: 24px;">
+    <h2>Outbound Placements</h2>
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 8px;">
+        <button id="tab-form-btn" onclick="switchTab('form')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-regular fa-square-plus"></i> Add Outbound Capital
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-folder-open"></i> Outbound Investment Portfolio
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content 1: Add Form -->
+<div id="tab-form" class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px;">
+        <h3 id="form-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i>
+            Add Outbound Capital
+        </h3>
+    </div>
+
+    <form method="POST" action="{% url 'investment:outbound_list' %}" id="outboundForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_outbound">
+        <input type="hidden" name="doc_id" id="doc_id" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Project / Subsidiary Name <span class="asterisk">*</span></label>
+                <input type="text" name="project_name" id="project_name" class="form-control" required placeholder="e.g. Real Estate Project Alpha">
+            </div>
+
+            <div class="form-group">
+                <label>Entity Type <span class="asterisk">*</span></label>
+                <select name="entity_type" id="entity_type" class="form-control" required>
+                    <option value="Subsidiary">Subsidiary</option>
+                    <option value="Joint Venture">Joint Venture</option>
+                    <option value="External Venture">External Venture</option>
+                    <option value="Bond">Bond / Fixed Income</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Expected Annual ROI % <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="roi_expected_annual" id="roi_expected_annual" class="form-control" required placeholder="e.g. 10.5">
+            </div>
+
+            <div class="form-group">
+                <label>Allocated Capital ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="allocated_capital" id="allocated_capital" class="form-control" required placeholder="0.00">
+            </div>
+            
+            <div class="form-group">
+                <label>Current Valuation ($) <span class="asterisk">*</span></label>
+                <input type="number" step="0.01" name="current_valuation" id="current_valuation" class="form-control" required placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label>Placement Date <span class="asterisk">*</span></label>
+                <input type="date" name="placement_date" id="placement_date" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Status <span class="asterisk">*</span></label>
+                <select name="status" id="status" class="form-control" required>
+                    <option value="Active">Active</option>
+                    <option value="Liquidated">Liquidated</option>
+                    <option value="Written Off">Written Off</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-submit" id="btn-save" style="padding: 12px 28px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-down-to-bracket"></i> Record Outbound Asset
+            </button>
+            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-border); color: var(--text-primary); padding: 12px 28px; display: none;">
+                Cancel / Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Content 2: Portfolio List -->
+<div id="tab-list" class="glass-card" style="display: none; min-height: 500px; margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-folder-open" style="color: var(--accent-color);"></i>
+            Outbound Investment Portfolio
+        </h3>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Project Name</th>
+                <th>Type</th>
+                <th>Invested</th>
+                <th>Current Valuation</th>
+                <th>Expected ROI</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for out in outbound %}
+            <tr>
+                <td style="font-weight: 600; color: var(--text-primary);">{{ out.project_name }}</td>
+                <td>{{ out.entity_type }}</td>
+                <td>${{ out.allocated_capital|floatformat:2 }}</td>
+                <td style="font-weight: 600; color: #10b981;">${{ out.current_valuation|floatformat:2 }}</td>
+                <td>{{ out.roi_expected_annual }}%</td>
+                <td>
+                    <span class="badge {% if out.status == 'Active' %}success{% elif out.status == 'Liquidated' %}warning{% else %}danger{% endif %}">
+                        {{ out.status }}
+                    </span>
+                </td>
+                <td>
+                    {{ out|json_script:out.id }}
+                    <div class="action-group">
+                        <button type="button" class="btn-action edit" onclick="editRecord('{{ out.id }}')" title="Edit Investment"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <form method="POST" action="{% url 'investment:outbound_list' %}" style="margin:0;" onsubmit="return confirm('Delete this outbound investment record?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_outbound">
+                            <input type="hidden" name="doc_id" value="{{ out.id }}">
+                            <button type="submit" class="btn-action delete" title="Delete Investment"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">No outbound placements recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('placement_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+    });
+
+    function switchTab(tab) {
+        const formDiv = document.getElementById("tab-form");
+        const listDiv = document.getElementById("tab-list");
+        const formBtn = document.getElementById("tab-form-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'form') {
+            formDiv.style.display = 'block';
+            listDiv.style.display = 'none';
+            formBtn.style.background = 'var(--accent-color)';
+            formBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+        } else {
+            formDiv.style.display = 'none';
+            listDiv.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            formBtn.style.background = 'transparent';
+            formBtn.style.color = '#64748b';
+        }
+    }
+
+    function editRecord(id) {
+        const data = JSON.parse(document.getElementById(id).textContent);
+        
+        switchTab('form');
+        
+        document.getElementById('doc_id').value = id;
+        document.getElementById('project_name').value = data.project_name || '';
+        document.getElementById('entity_type').value = data.entity_type || 'Subsidiary';
+        document.getElementById('roi_expected_annual').value = data.roi_expected_annual || '';
+        document.getElementById('allocated_capital').value = data.allocated_capital || '';
+        document.getElementById('current_valuation').value = data.current_valuation || '';
+        document.getElementById('placement_date').value = data.placement_date || '';
+        document.getElementById('status').value = data.status || 'Active';
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: var(--accent-color);"></i> Edit Outbound Asset';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-circle-check"></i> Update Asset';
+        document.getElementById('btn-cancel').style.display = 'flex';
+    }
+
+    function cancelEdit() {
+        document.getElementById('doc_id').value = '';
+        document.getElementById('outboundForm').reset();
+        document.getElementById('placement_date').value = new Date().toISOString().substring(0, 10);
+
+        document.getElementById('form-title').innerHTML = '<i class="fa-regular fa-square-plus" style="color: var(--accent-color);"></i> Add Outbound Capital';
+        document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrow-down-to-bracket"></i> Record Outbound Asset';
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+</script>
+{% endblock %}
