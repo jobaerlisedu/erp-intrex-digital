@@ -122,6 +122,41 @@
         background: #f8fafc;
         font-weight: 600;
     }
+
+    .docs-content {
+        transition: opacity 0.2s ease-in-out;
+    }
+    
+    .docs-content.loading {
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
+    /* Skeleton Loading styles */
+    .skeleton-text {
+        height: 16px;
+        margin-bottom: 12px;
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+    .skeleton-text.title {
+        height: 32px;
+        width: 60%;
+        margin-bottom: 24px;
+    }
+    .skeleton-text.body {
+        width: 100%;
+    }
+    .skeleton-text.short {
+        width: 40%;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
 </style>
 {% endblock %}
 
@@ -174,4 +209,147 @@
         {{ html_content|safe }}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const contentContainer = document.querySelector('.docs-content');
+        const sidebarLinks = document.querySelectorAll('.docs-sidebar a');
+
+        if (!contentContainer) return;
+
+        // Keep track of active fetch to abort if user clicks another page mid-flight
+        let currentAbortController = null;
+
+        // Function to update the page content asynchronously
+        async function loadDocPage(url, pushState = true) {
+            // Cancel pending fetch if any
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+
+            // Create new AbortController
+            currentAbortController = new AbortController();
+            const { signal } = currentAbortController;
+
+            // 1. Enter Loading State (fade container and show skeleton)
+            contentContainer.classList.add('loading');
+            
+            // Wait 150ms before showing skeleton to prevent flash on fast connection
+            const skeletonTimeout = setTimeout(() => {
+                contentContainer.innerHTML = `
+                    <div class="skeleton-text title"></div>
+                    <div class="skeleton-text body"></div>
+                    <div class="skeleton-text body"></div>
+                    <div class="skeleton-text body"></div>
+                    <div class="skeleton-text short"></div>
+                    <br>
+                    <div class="skeleton-text title" style="width: 45%; height: 24px;"></div>
+                    <div class="skeleton-text body"></div>
+                    <div class="skeleton-text body"></div>
+                    <div class="skeleton-text short" style="width: 30%;"></div>
+                `;
+            }, 150);
+
+            try {
+                // Fetch JSON from Django endpoint
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    signal
+                });
+
+                clearTimeout(skeletonTimeout);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 2. Render Page Content
+                contentContainer.innerHTML = data.html_content;
+
+                // 3. Manage Link active State
+                sidebarLinks.forEach(link => {
+                    const linkUrl = new URL(link.href, window.location.origin).pathname;
+                    
+                    // Normalize matching: path can be '/docs/user-guides/hrm' or similar
+                    let isMatch = false;
+                    const normalizedUrl = url.replace(/\/$/, ''); // strip trailing slash
+                    const normalizedLink = linkUrl.replace(/\/$/, '');
+                    
+                    if (normalizedLink === normalizedUrl) {
+                        isMatch = true;
+                    } else if (data.current_path) {
+                        const pathKey = data.current_path.replace('.md', '');
+                        if (normalizedLink.endsWith(pathKey)) {
+                            isMatch = true;
+                        }
+                    }
+                    
+                    if (isMatch) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+
+                // 4. Update History State
+                if (pushState) {
+                    history.pushState({ url }, '', url);
+                }
+
+            } catch (error) {
+                clearTimeout(skeletonTimeout);
+                if (error.name === 'AbortError') return; // Ignore aborted requests
+
+                console.error('Failed to load documentation:', error);
+                
+                // 5. Handle Error State locally (inline error retry block)
+                contentContainer.innerHTML = `
+                    <div style="text-align: center; padding: 48px 24px; border: 1px dashed #ef4444; border-radius: 8px; background: #fef2f2; margin-top: 16px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 16px;"></i>
+                        <h3 style="color: #991b1b; margin-top: 0; margin-bottom: 8px;">Failed to Load Article</h3>
+                        <p style="color: #7f1d1d; margin: 0 0 20px 0; font-size: 0.95rem;">
+                            There was an error connecting to the documentation portal. Please check your network connection.
+                        </p>
+                        <button id="retry-doc-load-btn" style="background: #ef4444; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                            <i class="fa-solid fa-arrow-rotate-right"></i> Retry Loading
+                        </button>
+                    </div>
+                `;
+
+                // Add retry handler
+                const retryBtn = document.getElementById('retry-doc-load-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', () => loadDocPage(url, pushState));
+                }
+            } finally {
+                contentContainer.classList.remove('loading');
+            }
+        }
+
+        // Attach click listeners to all sidebar links
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const url = link.getAttribute('href');
+                loadDocPage(url, true);
+            });
+        });
+
+        // Listen for back/forward navigation
+        window.addEventListener('popstate', (event) => {
+            const url = event.state && event.state.url ? event.state.url : window.location.pathname;
+            loadDocPage(url, false);
+        });
+
+        // Initialize current page state in browser history
+        history.replaceState({ url: window.location.pathname }, '', window.location.pathname);
+    });
+</script>
 {% endblock %}

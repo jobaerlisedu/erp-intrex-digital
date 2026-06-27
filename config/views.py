@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from config.firebase import db
 
@@ -149,6 +150,12 @@ def documentation_viewer(request, path=''):
         md_content,
         extensions=['extra', 'codehilite', 'toc', 'tables']
     )
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'html_content': html_content,
+            'current_path': path
+        })
 
     return render(request, 'erp/documentation.html', {
         'html_content': html_content,
