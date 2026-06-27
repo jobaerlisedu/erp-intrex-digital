@@ -186,18 +186,79 @@ def user_toggle_active(request, user_id):
 # ─────────────────────────────────────────────
 # Audit Logs & Session Monitor
 # ─────────────────────────────────────────────
+class FirestoreAuditLog:
+    def __init__(self, data):
+        self.id = data.get('id')
+        self.action = data.get('action', '')
+        self.module = data.get('module', '')
+        self.description = data.get('description', '')
+        self.ip_address = data.get('ip_address', '')
+        self.sha256_hash = data.get('sha256_hash', '')
+        self.before_state = data.get('before_state')
+        self.after_state = data.get('after_state')
+        self.user_id = data.get('user_id')
+        
+        username = data.get('username')
+        if username and username != 'Anonymous':
+            class MockUser:
+                def __init__(self, name):
+                    self.username = name
+            self.user = MockUser(username)
+        else:
+            self.user = None
+            
+        t_val = data.get('timestamp')
+        if t_val:
+            from datetime import datetime
+            if isinstance(t_val, str):
+                try:
+                    dt = datetime.strptime(t_val, '%Y-%m-%d %H:%M:%S.%f')
+                except ValueError:
+                    try:
+                        dt = datetime.strptime(t_val, '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        dt = datetime.now()
+                self.timestamp = timezone.make_aware(dt) if timezone.is_naive(dt) else dt
+            else:
+                self.timestamp = timezone.make_aware(t_val) if timezone.is_naive(t_val) else t_val
+        else:
+            self.timestamp = timezone.now()
+
+
 @module_access('audit_logs')
 def audit_logs(request):
-    logs = AuditLog.objects.select_related('user').all().order_by('-timestamp')
     active_sessions = ActiveSession.objects.select_related('user').all().order_by('-last_activity')
     
-    # Perform a integrity check on the cryptographic hash chain
+    logs = []
+    use_firestore = False
+    
+    import sys
+    if 'test' not in sys.argv:
+        try:
+            from config.firebase import db
+            from google.cloud import firestore as google_firestore
+            
+            # Query recent 1000 logs from Firestore, ordered by timestamp descending
+            docs = db.collection('erp_audit_logs').order_by('timestamp', direction=google_firestore.Query.DESCENDING).limit(1000).stream()
+            for doc in docs:
+                data = doc.to_dict()
+                data['id'] = doc.id
+                logs.append(FirestoreAuditLog(data))
+            
+            use_firestore = True
+        except Exception as e:
+            print(f"Error fetching audit logs from Firestore: {e}")
+            
+    if not use_firestore:
+        logs = list(AuditLog.objects.select_related('user').all().order_by('-timestamp'))
+        
+    # Perform an integrity check on the cryptographic hash chain
     integrity_status = "SECURE"
     altered_logs = []
     
     prev_hash = "0" * 64
     # Check from oldest to newest to verify chain validity
-    for log in reversed(list(logs)):
+    for log in reversed(logs):
         if not log.sha256_hash:
             # Skip legacy log entries created before the hash chain was introduced
             continue
@@ -209,8 +270,20 @@ def audit_logs(request):
         prev_hash = log.sha256_hash
 
     # Anomaly alerts: e.g. recent failed login count (last 24 hours) or mass exports
-    failed_logins = AuditLog.objects.filter(action='LOGIN_FAILED', timestamp__gte=timezone.now() - timedelta(days=1)).count()
-    has_mass_exports = AuditLog.objects.filter(action__icontains='EXPORT', timestamp__gte=timezone.now() - timedelta(days=1)).exists()
+    failed_logins = 0
+    has_mass_exports = False
+    
+    if use_firestore:
+        one_day_ago = timezone.now() - timedelta(days=1)
+        for log in logs:
+            if log.timestamp and log.timestamp >= one_day_ago:
+                if log.action == 'LOGIN_FAILED':
+                    failed_logins += 1
+                if 'EXPORT' in log.action.upper():
+                    has_mass_exports = True
+    else:
+        failed_logins = AuditLog.objects.filter(action='LOGIN_FAILED', timestamp__gte=timezone.now() - timedelta(days=1)).count()
+        has_mass_exports = AuditLog.objects.filter(action__icontains='EXPORT', timestamp__gte=timezone.now() - timedelta(days=1)).exists()
 
     return render(request, 'accounts/audit_logs.html', {
         'logs': logs,
