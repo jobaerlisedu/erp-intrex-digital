@@ -52,9 +52,9 @@ MIDDLEWARE = [
     'config.middleware.DynamicCsrfMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'accounts.middleware.ActiveSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.ActiveSessionMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
