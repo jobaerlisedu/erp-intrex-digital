@@ -114,3 +114,43 @@ def erp_dashboard(request):
         'audit_logs': audit_logs,
     }
     return render(request, 'erp/dashboard.html', context)
+
+
+@login_required
+def documentation_viewer(request, path=''):
+    import os
+    import markdown
+    from django.conf import settings
+    from django.http import Http404
+
+    # Default to index.md if no path provided
+    if not path or path == '/':
+        path = 'index.md'
+    
+    # Ensure it ends with .md
+    if not path.endswith('.md'):
+        path += '.md'
+
+    # Secure the path against directory traversal
+    base_docs_path = os.path.join(settings.BASE_DIR, 'docs-portal', 'docs')
+    safe_path = os.path.abspath(os.path.join(base_docs_path, path))
+    
+    if not safe_path.startswith(base_docs_path):
+        raise Http404("Invalid documentation path.")
+
+    if not os.path.exists(safe_path):
+        raise Http404("Documentation file not found.")
+
+    with open(safe_path, 'r', encoding='utf-8') as f:
+        md_content = f.read()
+
+    # Convert markdown to HTML with common extensions
+    html_content = markdown.markdown(
+        md_content,
+        extensions=['extra', 'codehilite', 'toc', 'tables']
+    )
+
+    return render(request, 'erp/documentation.html', {
+        'html_content': html_content,
+        'current_path': path
+    })

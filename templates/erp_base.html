@@ -1123,6 +1123,14 @@
             </li>
             {% endif %}
 
+            <!-- Documentation Portal -->
+            <li style="margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--sidebar-border);">
+                <a href="{% url 'docs_index' %}" class="nav-link {% if request.resolver_match.url_name == 'docs_index' or request.resolver_match.url_name == 'docs_page' %}active{% endif %}" data-tooltip="Documentation">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                    <span>Documentation</span>
+                </a>
+            </li>
+
             <!-- User Management — staff/superusers only -->
             {% if request.user.is_staff or request.user.is_superuser %}
             <li style="margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--sidebar-border);">

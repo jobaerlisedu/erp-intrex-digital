@@ -1,0 +1,177 @@
+{% extends 'erp_base.html' %}
+
+{% block title %}ERP Documentation Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-container {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+    
+    .docs-sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        background: #fff;
+        border: 1px solid var(--sidebar-border);
+        border-radius: 12px;
+        padding: 20px;
+        position: sticky;
+        top: 24px;
+    }
+
+    .docs-sidebar h3 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin: 16px 0 8px 0;
+        letter-spacing: 0.05em;
+    }
+
+    .docs-sidebar h3:first-child { margin-top: 0; }
+
+    .docs-sidebar ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .docs-sidebar li {
+        margin-bottom: 4px;
+    }
+
+    .docs-sidebar a {
+        display: block;
+        padding: 6px 12px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    .docs-sidebar a:hover {
+        background: rgba(33, 92, 92, 0.05);
+        color: var(--accent-color);
+    }
+    
+    .docs-sidebar a.active {
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .docs-content {
+        flex: 1;
+        background: #fff;
+        border: 1px solid var(--sidebar-border);
+        border-radius: 12px;
+        padding: 40px;
+        min-height: 500px;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: var(--text-primary);
+    }
+    
+    .docs-content h1, .docs-content h2, .docs-content h3 {
+        color: var(--accent-color);
+        margin-top: 32px;
+        margin-bottom: 16px;
+    }
+    
+    .docs-content h1:first-child { margin-top: 0; }
+    
+    .docs-content pre {
+        background: #f1f5f9;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.9rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .docs-content code {
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: #ef4444;
+    }
+    
+    .docs-content pre code {
+        background: none;
+        padding: 0;
+        color: inherit;
+    }
+    
+    .docs-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+    }
+    
+    .docs-content th, .docs-content td {
+        padding: 12px;
+        border: 1px solid var(--sidebar-border);
+        text-align: left;
+    }
+    
+    .docs-content th {
+        background: #f8fafc;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <h2 style="margin:0; font-size:1.6rem; color:var(--text-primary);">
+        <i class="fa-solid fa-book-open-reader" style="color:var(--accent-color); margin-right:8px;"></i>
+        Internal Documentation Hub
+    </h2>
+    <p style="color:var(--text-secondary); margin-top:8px;">Learn how to navigate, configure, and develop the Intrex ERP system.</p>
+</div>
+
+<div class="docs-container">
+    <div class="docs-sidebar">
+        <h3>Overview</h3>
+        <ul>
+            <li><a href="{% url 'docs_index' %}" class="{% if current_path == 'index.md' %}active{% endif %}">Welcome</a></li>
+        </ul>
+
+        <h3>End-User Guides</h3>
+        <ul>
+            <li><a href="{% url 'docs_page' 'user-guides/getting-started' %}" class="{% if current_path == 'user-guides/getting-started.md' %}active{% endif %}">Getting Started</a></li>
+            <li><a href="{% url 'docs_page' 'user-guides/hrm' %}" class="{% if current_path == 'user-guides/hrm.md' %}active{% endif %}">HR Management</a></li>
+            <li><a href="{% url 'docs_page' 'user-guides/inventory' %}" class="{% if current_path == 'user-guides/inventory.md' %}active{% endif %}">Inventory & Procurement</a></li>
+            <li><a href="{% url 'docs_page' 'user-guides/billing' %}" class="{% if current_path == 'user-guides/billing.md' %}active{% endif %}">Accounts & Billing</a></li>
+            <li><a href="{% url 'docs_page' 'user-guides/solutions' %}" class="{% if current_path == 'user-guides/solutions.md' %}active{% endif %}">Service Solutions</a></li>
+            <li><a href="{% url 'docs_page' 'user-guides/training' %}" class="{% if current_path == 'user-guides/training.md' %}active{% endif %}">Training & EdTech</a></li>
+        </ul>
+
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <h3>Admin Runbooks</h3>
+        <ul>
+            <li><a href="{% url 'docs_page' 'admin-runbooks/access-control' %}" class="{% if current_path == 'admin-runbooks/access-control.md' %}active{% endif %}">Access Control (RBAC)</a></li>
+            <li><a href="{% url 'docs_page' 'admin-runbooks/audit-compliance' %}" class="{% if current_path == 'admin-runbooks/audit-compliance.md' %}active{% endif %}">Audit & Compliance</a></li>
+            <li><a href="{% url 'docs_page' 'admin-runbooks/disaster-recovery' %}" class="{% if current_path == 'admin-runbooks/disaster-recovery.md' %}active{% endif %}">Disaster Recovery</a></li>
+            <li><a href="{% url 'docs_page' 'admin-runbooks/system-config' %}" class="{% if current_path == 'admin-runbooks/system-config.md' %}active{% endif %}">System Config</a></li>
+        </ul>
+
+        <h3>Developer Docs</h3>
+        <ul>
+            <li><a href="{% url 'docs_page' 'developer/architecture' %}" class="{% if current_path == 'developer/architecture.md' %}active{% endif %}">Architecture & Logic</a></li>
+            <li><a href="{% url 'docs_page' 'developer/database-schema' %}" class="{% if current_path == 'developer/database-schema.md' %}active{% endif %}">Database Schema</a></li>
+            <li><a href="{% url 'docs_page' 'developer/api-reference' %}" class="{% if current_path == 'developer/api-reference.md' %}active{% endif %}">API Reference</a></li>
+            <li><a href="{% url 'docs_page' 'developer/local-setup' %}" class="{% if current_path == 'developer/local-setup.md' %}active{% endif %}">Local Setup</a></li>
+        </ul>
+        {% endif %}
+    </div>
+
+    <div class="docs-content">
+        {{ html_content|safe }}
+    </div>
+</div>
+{% endblock %}

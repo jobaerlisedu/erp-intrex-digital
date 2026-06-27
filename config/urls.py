@@ -51,6 +51,10 @@ urlpatterns = [
     path('billing/', include('billing.urls', namespace='billing')),
     path('users/', include('accounts.urls', namespace='accounts')),
 
+    # Documentation
+    path('docs/', config_views.documentation_viewer, name='docs_index'),
+    path('docs/<path:path>/', config_views.documentation_viewer, name='docs_page'),
+
     # Authentication
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

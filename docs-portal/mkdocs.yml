@@ -1,0 +1,75 @@
+site_name: Intrex ERP Documentation
+site_description: Global Documentation Portal for Intrex ERP
+site_author: DevOps Team
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.png
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - 📖 End-User Hub:
+      - Getting Started: user-guides/getting-started.md
+      - HR Management: user-guides/hrm.md
+      - Procurement & Inventory: user-guides/inventory.md
+      - Accounts & Billing: user-guides/billing.md
+      - Service Solutions: user-guides/solutions.md
+      - Training & EdTech: user-guides/training.md
+  - ⚙️ SysAdmin Runbooks:
+      - Access Control (RBAC): admin-runbooks/access-control.md
+      - Audit & Compliance: admin-runbooks/audit-compliance.md
+      - Disaster Recovery: admin-runbooks/disaster-recovery.md
+      - System Configuration: admin-runbooks/system-config.md
+  - 🛠️ Developer Blueprint:
+      - Architecture & Logic: developer/architecture.md
+      - Database Schema: developer/database-schema.md
+      - API Reference: developer/api-reference.md
+      - Local Setup (Docker): developer/local-setup.md
