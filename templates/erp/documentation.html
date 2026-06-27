@@ -74,6 +74,22 @@
         color: var(--text-primary);
     }
     
+    .docs-content a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 500;
+        border-bottom: 2px solid rgba(33, 92, 92, 0.15);
+        transition: all 0.2s ease-in-out;
+        padding: 0 2px;
+    }
+    
+    .docs-content a:hover {
+        color: #174242;
+        border-bottom-color: var(--accent-color);
+        background: rgba(33, 92, 92, 0.05);
+        border-radius: 4px;
+    }
+    
     .docs-content h1, .docs-content h2, .docs-content h3 {
         color: var(--accent-color);
         margin-top: 32px;
@@ -193,6 +209,7 @@
             <li><a href="{% url 'docs_page' 'admin-runbooks/audit-compliance' %}" class="{% if current_path == 'admin-runbooks/audit-compliance.md' %}active{% endif %}">Audit & Compliance</a></li>
             <li><a href="{% url 'docs_page' 'admin-runbooks/disaster-recovery' %}" class="{% if current_path == 'admin-runbooks/disaster-recovery.md' %}active{% endif %}">Disaster Recovery</a></li>
             <li><a href="{% url 'docs_page' 'admin-runbooks/system-config' %}" class="{% if current_path == 'admin-runbooks/system-config.md' %}active{% endif %}">System Config</a></li>
+            <li><a href="{% url 'docs_page' 'admin-runbooks/modules-sections' %}" class="{% if current_path == 'admin-runbooks/modules-sections.md' %}active{% endif %}">Modules & Sections</a></li>
         </ul>
 
         <h3>Developer Docs</h3>
