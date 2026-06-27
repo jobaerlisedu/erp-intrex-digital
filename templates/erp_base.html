@@ -623,22 +623,23 @@
 }
 
 .global-modal-header {
-    background-color: #215e5a; /* Premium dark teal */
-    color: #ffffff;
+    background-color: #ffffff; /* White background */
+    color: var(--text-primary);
     padding: 24px 32px;
     position: relative;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .modal-pill-badge {
     display: inline-block;
-    background-color: #ffffff;
-    color: #215e5a;
-    font-size: 0.7rem;
+    background-color: #215c5c; /* Dark teal background */
+    color: #ffffff; /* White text */
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 4px 12px;
-    border-radius: 20px;
+    padding: 6px 14px;
+    border-radius: 4px;
     margin-bottom: 12px;
 }
 
@@ -646,29 +647,29 @@
     margin: 0;
     font-size: 1.4rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .global-modal-subtitle {
     margin: 6px 0 0 0;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-secondary);
 }
 
 .btn-modal-close {
     position: absolute;
-    top: 20px;
-    right: 24px;
+    top: 24px;
+    right: 32px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-secondary);
     font-size: 1.25rem;
     cursor: pointer;
     transition: color 0.2s;
 }
 
 .btn-modal-close:hover {
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .global-modal-body {
@@ -710,18 +711,19 @@
     background: #ffffff;
     border-top: 1px solid #e2e8f0;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 12px;
     align-items: center;
 }
 
 .global-modal-footer .btn-modal-action {
     background-color: var(--accent-color);
     color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    padding: 12px 28px;
-    font-size: 0.95rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 10px 24px;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
@@ -733,6 +735,17 @@
 
 .global-modal-footer .btn-modal-action:hover {
     opacity: 0.9;
+}
+
+.global-modal-footer .btn-modal-close-footer {
+    background-color: #ffffff;
+    color: var(--text-primary);
+    border: 1px solid #cbd5e1;
+}
+
+.global-modal-footer .btn-modal-close-footer:hover {
+    background-color: #f8fafc;
+    opacity: 1;
 }
 
 </style>
@@ -1409,7 +1422,7 @@
                 <!-- Content injected via JS -->
             </div>
             <div class="global-modal-footer">
-                <button type="button" class="btn-modal-action" onclick="closeGlobalModal()">Close</button>
+                <button type="button" class="btn-modal-action btn-modal-close-footer" onclick="closeGlobalModal()">Close</button>
                 <button type="button" class="btn-modal-action" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Details</button>
             </div>
         </div>
