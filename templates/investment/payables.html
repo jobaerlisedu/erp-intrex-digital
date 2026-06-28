@@ -13,6 +13,138 @@
         color: #10b981 !important;
         border: 1px solid rgba(16, 185, 129, 0.2) !important;
     }
+
+    /* Grid Calendar Styles */
+    .calendar-container {
+        border: 1px solid var(--sidebar-border);
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--sidebar-border);
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .calendar-weekdays-row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        font-weight: 700;
+        background: rgba(0, 0, 0, 0.02);
+        border-bottom: 1px solid var(--sidebar-border);
+        padding: 10px 0;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background-color: var(--sidebar-border);
+        gap: 1px;
+    }
+    .calendar-cell {
+        min-height: 120px;
+        background: #fff;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        position: relative;
+        transition: background-color 0.2s ease;
+    }
+    .calendar-cell:hover {
+        background: rgba(33, 92, 92, 0.02);
+    }
+    .calendar-cell.other-month {
+        background: rgba(0, 0, 0, 0.03);
+        opacity: 0.5;
+    }
+    .calendar-cell.today {
+        background: rgba(33, 92, 92, 0.05);
+    }
+    .calendar-cell.today .calendar-day-num {
+        background: var(--accent-color);
+        color: #fff;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    .calendar-day-num {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        align-self: flex-start;
+    }
+    .calendar-events-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow-y: auto;
+        flex-grow: 1;
+        max-height: 110px;
+    }
+    .calendar-event {
+        font-size: 0.72rem;
+        padding: 4px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+        line-height: 1.3;
+        border-left: 3px solid;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .calendar-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+    }
+
+    .event-paid {
+        background-color: rgba(16, 185, 129, 0.12);
+        color: #065f46;
+        border-left-color: #10b981;
+    }
+    .event-unpaid {
+        background-color: rgba(239, 68, 68, 0.12);
+        color: #991b1b;
+        border-left-color: #ef4444;
+    }
+
+    .month-nav-btn {
+        background: transparent;
+        border: 1px solid var(--sidebar-border);
+        color: var(--text-primary);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .month-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--accent-color);
+    }
+    .month-label {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 1.05rem;
+        min-width: 140px;
+        text-align: center;
+        display: inline-block;
+    }
 </style>
 {% endblock %}
 
@@ -21,14 +153,47 @@
     <h2>Liabilities & Payables</h2>
     <!-- Tabs Header -->
     <div style="display: flex; gap: 8px;">
-        <button id="tab-list-btn" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
-            <i class="fa-solid fa-business-time"></i> Amortization Servicing Calendar
+        <button id="tab-calendar-btn" onclick="switchTab('calendar')" style="background: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-calendar-days"></i> Interactive Calendar
+        </button>
+        <button id="tab-list-btn" onclick="switchTab('list')" style="background: transparent; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; transition: all 0.2s ease;">
+            <i class="fa-solid fa-list"></i> Payables Ledger
         </button>
     </div>
 </div>
 
-<!-- Tab Content: Calendar List -->
-<div id="tab-list" class="glass-card" style="min-height: 500px; margin-bottom: 32px;">
+<!-- Tab Content: Calendar Grid -->
+<div id="tab-calendar" class="calendar-container">
+    <div class="calendar-header">
+        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.15rem; color: var(--text-primary);">
+            <i class="fa-solid fa-business-time" style="color: var(--accent-color);"></i> Amortization Servicing Calendar
+        </h3>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="display: flex; align-items: center; border: 1px solid var(--sidebar-border); border-radius: 6px; background: rgba(0,0,0,0.01); overflow: hidden; padding: 2px;">
+                <button class="month-nav-btn" id="calendarPrevMonthBtn" style="border:none;"><i class="fa-solid fa-chevron-left"></i></button>
+                <span class="month-label" id="calendarCurrentMonthLabel">—</span>
+                <button class="month-nav-btn" id="calendarNextMonthBtn" style="border:none;"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="calendar-weekdays-row">
+        <div>Sunday</div>
+        <div>Monday</div>
+        <div>Tuesday</div>
+        <div>Wednesday</div>
+        <div>Thursday</div>
+        <div>Friday</div>
+        <div>Saturday</div>
+    </div>
+
+    <div class="calendar-grid" id="calendarDaysGrid">
+        <!-- Populated dynamically in Javascript -->
+    </div>
+</div>
+
+<!-- Tab Content: Ledger List -->
+<div id="tab-list" class="glass-card" style="min-height: 500px; margin-bottom: 32px; display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--sidebar-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
             <i class="fa-solid fa-wallet" style="color: var(--accent-color);"></i>
@@ -67,7 +232,7 @@
                 <td><span class="due-date">{{ s.due_date }}</span></td>
                 <td><span class="principal-due">BDT {{ s.scheduled_principal|floatformat:2 }}</span></td>
                 <td><span class="interest-due">BDT {{ s.scheduled_interest|floatformat:2 }}</span></td>
-                <td style="font-weight: 600; color: var(--text-primary);">BDT {{ s.scheduled_principal|add:s.scheduled_interest|floatformat:2 }}</td>
+                <td style="font-weight: 600; color: var(--text-primary);">BDT {{ s.total_due|floatformat:2 }}</td>
                 <td>
                     <span class="badge payment-status {% if s.payment_status == 'Paid' %}status-paid{% else %}status-unpaid{% endif %}">
                         {{ s.payment_status }}
@@ -91,19 +256,59 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="9" style="text-align: center; padding: 48px; color: var(--text-secondary);">No amortization schedule schedules found.</td>
+                <td colspan="9" style="text-align: center; padding: 48px; color: var(--text-secondary);">No amortization schedules found.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- CSRF helper form -->
+<div style="display: none;">
+    <form id="csrf-helper-form">
+        {% csrf_token %}
+    </form>
+</div>
+
+{{ schedules|json_script:"schedules-data" }}
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    const schedulesDb = JSON.parse(document.getElementById('schedules-data').textContent);
+
+    let currentCalendarMonth = new Date().getMonth();
+    let currentCalendarYear = new Date().getFullYear();
+
     document.addEventListener('DOMContentLoaded', () => {
         filterPayables();
+        renderCalendar();
     });
+
+    // Tab switching logic
+    function switchTab(tab) {
+        const calSec = document.getElementById("tab-calendar");
+        const listSec = document.getElementById("tab-list");
+        const calBtn = document.getElementById("tab-calendar-btn");
+        const listBtn = document.getElementById("tab-list-btn");
+
+        if (tab === 'calendar') {
+            calSec.style.display = 'block';
+            listSec.style.display = 'none';
+            calBtn.style.background = 'var(--accent-color)';
+            calBtn.style.color = '#fff';
+            listBtn.style.background = 'transparent';
+            listBtn.style.color = '#64748b';
+            renderCalendar();
+        } else {
+            calSec.style.display = 'none';
+            listSec.style.display = 'block';
+            listBtn.style.background = 'var(--accent-color)';
+            listBtn.style.color = '#fff';
+            calBtn.style.background = 'transparent';
+            calBtn.style.color = '#64748b';
+        }
+    }
 
     function filterPayables() {
         const q = document.getElementById('search-payable').value.toLowerCase();
@@ -123,5 +328,172 @@
             }
         });
     }
+
+    // Interactive Monthly Calendar Render
+    function renderEventsForDay(dateStr) {
+        let html = "";
+        schedulesDb.forEach(s => {
+            if (s.due_date === dateStr) {
+                const eventClass = s.payment_status === 'Paid' ? 'event-paid' : 'event-unpaid';
+                html += `
+                    <div class="calendar-event ${eventClass}" data-schedule-id="${s.id}" title="${s.investor_name}\nInst #${s.installment_number}\nBDT ${s.total_due.toFixed(2)}">
+                        <strong>${s.investor_name.split(' ')[0]}</strong>: BDT ${s.total_due.toFixed(2)}
+                    </div>
+                `;
+            }
+        });
+        return html;
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById("calendarDaysGrid");
+        const label = document.getElementById("calendarCurrentMonthLabel");
+        if (!grid || !label) return;
+
+        const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        label.textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
+
+        const firstDayOfMonth = new Date(currentCalendarYear, currentCalendarMonth, 1);
+        const startDayOfWeek = firstDayOfMonth.getDay();
+        const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+        const prevMonthDays = new Date(currentCalendarYear, currentCalendarMonth, 0).getDate();
+
+        let html = "";
+
+        // Prev month padding cells
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const day = prevMonthDays - i;
+            html += `<div class="calendar-cell other-month"><div class="calendar-day-num">${day}</div></div>`;
+        }
+
+        // Current month cells
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isToday = (today.getDate() === day && today.getMonth() === currentCalendarMonth && today.getFullYear() === currentCalendarYear);
+            const todayClass = isToday ? "today" : "";
+            
+            html += `
+                <div class="calendar-cell ${todayClass}" data-date="${dateStr}">
+                    <div class="calendar-day-num">${day}</div>
+                    <div class="calendar-events-container">
+                        ${renderEventsForDay(dateStr)}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Next month padding cells
+        const totalCells = startDayOfWeek + daysInMonth;
+        const remaining = (7 - (totalCells % 7)) % 7;
+        for (let day = 1; day <= remaining; day++) {
+            html += `<div class="calendar-cell other-month"><div class="calendar-day-num">${day}</div></div>`;
+        }
+
+        grid.innerHTML = html;
+
+        // Bind click events on calendar events
+        grid.querySelectorAll(".calendar-event[data-schedule-id]").forEach(el => {
+            el.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const scheduleId = el.getAttribute("data-schedule-id");
+                if (scheduleId) {
+                    showScheduleDetails(scheduleId);
+                }
+            });
+        });
+    }
+
+    // Modal popup helper (matching general detail profile style)
+    function showScheduleDetails(scheduleId) {
+        const s = schedulesDb.find(item => item.id === scheduleId);
+        if (!s) return;
+
+        const csrfToken = document.querySelector('#csrf-helper-form [name=csrfmiddlewaretoken]').value;
+        const actionUrl = "{% url 'investment:payables_list' %}";
+
+        let actionHtml = '';
+        if (s.payment_status === 'Unpaid') {
+            actionHtml = `
+                <form method="POST" action="${actionUrl}" style="margin: 0;" onsubmit="return confirm('Mark this installment payment as cleared/disbursed?');">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="action" value="clear_payment">
+                    <input type="hidden" name="schedule_id" value="${s.id}">
+                    <button type="submit" class="btn-submit" style="background-color: #10b981; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-check"></i> Disburse & Clear Payment
+                    </button>
+                </form>
+            `;
+        } else {
+            actionHtml = `<span style="color: #10b981; font-weight: 700; font-size: 1.1rem;"><i class="fa-solid fa-circle-check"></i> Cleared on ${s.actual_payment_date}</span>`;
+        }
+
+        const modalHtml = `
+            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Investor Name:</strong>
+                        <div style="font-weight: 600; font-size: 1.1rem;">${s.investor_name}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Loan Reference ID:</strong>
+                        <div style="font-weight: 600; font-family: monospace;">${s.loan_id}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Installment Number:</strong>
+                        <div style="font-weight: 600;">Installment #${s.installment_number}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Scheduled Due Date:</strong>
+                        <div style="font-weight: 600;">${s.due_date}</div>
+                    </div>
+                </div>
+
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color); font-size: 0.95rem; font-weight: 700;">PAYMENT BREAKDOWN</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+                    <div style="border: 1px solid var(--sidebar-border); padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.01);">
+                        <label style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Principal portion</label>
+                        <div style="font-weight: 600;">BDT ${s.scheduled_principal.toFixed(2)}</div>
+                    </div>
+                    <div style="border: 1px solid var(--sidebar-border); padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.01);">
+                        <label style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interest portion</label>
+                        <div style="font-weight: 600;">BDT ${s.scheduled_interest.toFixed(2)}</div>
+                    </div>
+                    <div style="border: 1px solid var(--sidebar-border); padding: 10px; border-radius: 6px; background: var(--accent-color); color: #fff;">
+                        <label style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.7); display: block; margin-bottom: 4px;">Total amortized due</label>
+                        <div style="font-weight: 700; font-size: 1.05rem;">BDT ${s.total_due.toFixed(2)}</div>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px solid var(--sidebar-border); padding-top: 20px; display: flex; justify-content: center; align-items: center; min-height: 50px;">
+                    ${actionHtml}
+                </div>
+            </div>
+        `;
+
+        openGlobalModal(`AMORTIZATION INSTALLMENT DETAILS`, modalHtml, `Installment #${s.installment_number} for ${s.investor_name}`, `PAYABLE INFORMATION`);
+    }
+
+    // Month navigation controls
+    document.getElementById("calendarPrevMonthBtn")?.addEventListener("click", () => {
+        currentCalendarMonth--;
+        if (currentCalendarMonth < 0) {
+            currentCalendarMonth = 11;
+            currentCalendarYear--;
+        }
+        renderCalendar();
+    });
+
+    document.getElementById("calendarNextMonthBtn")?.addEventListener("click", () => {
+        currentCalendarMonth++;
+        if (currentCalendarMonth > 11) {
+            currentCalendarMonth = 0;
+            currentCalendarYear++;
+        }
+        renderCalendar();
+    });
 </script>
 {% endblock %}

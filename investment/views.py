@@ -161,6 +161,45 @@ def investor_list(request):
         return redirect('investment:investor_list')
 
     investors = get_collection_data('investors')
+    transactions = get_collection_data('investment_transactions')
+    loans = get_collection_data('investor_loans')
+
+    from collections import defaultdict
+    tx_by_investor = defaultdict(list)
+    for tx in transactions:
+        inv_id = tx.get('investor_id')
+        if inv_id:
+            tx_by_investor[inv_id].append({
+                'id': tx.get('id'),
+                'transaction_type': tx.get('transaction_type'),
+                'amount': float(tx.get('amount', 0.0)),
+                'payment_method': tx.get('payment_method'),
+                'value_date': tx.get('value_date'),
+                'status': tx.get('status'),
+                'notes': tx.get('notes', '')
+            })
+
+    loans_by_investor = defaultdict(list)
+    for loan in loans:
+        inv_id = loan.get('investor_id')
+        if inv_id:
+            loans_by_investor[inv_id].append({
+                'id': loan.get('id'),
+                'principal_amount': float(loan.get('principal_amount', 0.0)),
+                'outstanding_balance': float(loan.get('outstanding_balance', 0.0)),
+                'interest_rate': float(loan.get('interest_rate', 0.0)),
+                'tenure_months': int(loan.get('tenure_months', 0)),
+                'disbursement_date': loan.get('disbursement_date'),
+                'status': loan.get('status')
+            })
+
+    for inv in investors:
+        inv_id = inv['id']
+        inv['transactions'] = tx_by_investor.get(inv_id, [])
+        inv['loans'] = loans_by_investor.get(inv_id, [])
+        if 'created_at' in inv:
+            del inv['created_at']
+
     return render(request, 'investment/investors.html', {'investors': investors})
 
 @module_access('investment')
@@ -469,6 +508,7 @@ def payables_list(request):
             'due_date': s.get('due_date'),
             'scheduled_principal': float(s.get('scheduled_principal', 0.0)),
             'scheduled_interest': float(s.get('scheduled_interest', 0.0)),
+            'total_due': float(s.get('scheduled_principal', 0.0)) + float(s.get('scheduled_interest', 0.0)),
             'paid_amount': float(s.get('paid_amount', 0.0)),
             'payment_status': s.get('payment_status'),
             'actual_payment_date': s.get('actual_payment_date', '--'),

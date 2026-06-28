@@ -239,8 +239,50 @@
 
     function viewDetails(id) {
         const data = JSON.parse(document.getElementById(id).textContent);
+
+        let txRows = '';
+        if (data.transactions && data.transactions.length > 0) {
+            data.transactions.forEach(tx => {
+                const amtColor = tx.transaction_type === 'Capital Influx' ? '#10b981' : '#ef4444';
+                const prefix = tx.transaction_type === 'Capital Influx' ? '+' : '-';
+                txRows += `
+                    <tr>
+                        <td style="padding: 8px;"><strong>${tx.transaction_type}</strong></td>
+                        <td style="padding: 8px; color: ${amtColor}; font-weight: 600;">${prefix}BDT ${tx.amount.toFixed(2)}</td>
+                        <td style="padding: 8px;">${tx.value_date}</td>
+                        <td style="padding: 8px;">${tx.payment_method}</td>
+                        <td style="padding: 8px;">
+                            <span class="badge ${tx.status === 'Cleared' ? 'success' : 'warning'}" style="padding: 2px 6px; font-size: 0.75rem;">${tx.status}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            txRows = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 12px; font-style: italic;">No capital transactions recorded.</td></tr>`;
+        }
+
+        let loanRows = '';
+        if (data.loans && data.loans.length > 0) {
+            data.loans.forEach(loan => {
+                loanRows += `
+                    <tr>
+                        <td style="padding: 8px;"><strong>${loan.tenure_months} Months</strong></td>
+                        <td style="padding: 8px;">BDT ${loan.principal_amount.toFixed(2)}</td>
+                        <td style="padding: 8px; color: #ef4444; font-weight: 600;">BDT ${loan.outstanding_balance.toFixed(2)}</td>
+                        <td style="padding: 8px;">${loan.interest_rate}%</td>
+                        <td style="padding: 8px;">${loan.disbursement_date}</td>
+                        <td style="padding: 8px;">
+                            <span class="badge ${loan.status === 'Active' ? 'success' : 'warning'}" style="padding: 2px 6px; font-size: 0.75rem;">${loan.status}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            loanRows = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 12px; font-style: italic;">No loans issued.</td></tr>`;
+        }
+
         const modalHtml = `
-            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Category:</strong>
@@ -259,8 +301,9 @@
                         <div>${data.phone || '--'}</div>
                     </div>
                 </div>
-                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color);">BANKING INFORMATION</h4>
-                <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color); font-size: 0.95rem; font-weight: 700;">BANKING INFORMATION</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Account Holder:</strong>
                         <div style="font-weight: 600;">${data.bank_account_name || '--'}</div>
@@ -273,6 +316,43 @@
                         <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Routing Transit Code:</strong>
                         <div style="font-weight: 600;">${data.bank_routing_code || '--'}</div>
                     </div>
+                </div>
+
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color); font-size: 0.95rem; font-weight: 700;">CAPITAL TRANSACTIONS</h4>
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table class="data-table" style="margin-top: 0; width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--sidebar-border);">
+                                <th style="padding: 8px; text-align: left;">Type</th>
+                                <th style="padding: 8px; text-align: left;">Amount</th>
+                                <th style="padding: 8px; text-align: left;">Value Date</th>
+                                <th style="padding: 8px; text-align: left;">Method</th>
+                                <th style="padding: 8px; text-align: left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${txRows}
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 style="border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin: 16px 0 12px 0; color: var(--accent-color); font-size: 0.95rem; font-weight: 700;">INVESTOR LOANS</h4>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="margin-top: 0; width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--sidebar-border);">
+                                <th style="padding: 8px; text-align: left;">Tenure</th>
+                                <th style="padding: 8px; text-align: left;">Principal</th>
+                                <th style="padding: 8px; text-align: left;">Outstanding</th>
+                                <th style="padding: 8px; text-align: left;">Rate</th>
+                                <th style="padding: 8px; text-align: left;">Disbursed</th>
+                                <th style="padding: 8px; text-align: left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${loanRows}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
