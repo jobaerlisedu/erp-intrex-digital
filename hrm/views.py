@@ -865,12 +865,54 @@ def payroll(request):
             month = request.POST.get('month')
             year = request.POST.get('year')
             period = f"{month} {year}"
+            
+            months_map = {
+                'January': '01', 'February': '02', 'March': '03', 'April': '04',
+                'May': '05', 'June': '06', 'July': '07', 'August': '08',
+                'September': '09', 'October': '10', 'November': '11', 'December': '12'
+            }
+            month_num = months_map.get(month, '01')
+            target_period = f"{year}-{month_num}"
+            
             try:
                 # Calculate real totals from the employees collection
                 emp_docs = list(db.collection('employees').stream())
                 active_employees = [e.to_dict() for e in emp_docs if e.to_dict().get('status') == 'Active']
                 employee_count = len(active_employees)
-                total_net_pay = round(sum(float(e.get('gross_salary', 0)) for e in active_employees), 2)
+                
+                total_net_pay = 0.0
+                for emp in active_employees:
+                    emp_name = emp.get('name')
+                    basic_salary = float(emp.get('basic_salary', 0))
+                    gross_salary = float(emp.get('gross_salary', 0))
+                    
+                    # Count absent days
+                    absent_count = 0
+                    att_docs = db.collection('hrm_attendance').where('name', '==', emp_name).stream()
+                    for doc in att_docs:
+                        data = doc.to_dict()
+                        if data.get('date', '').startswith(target_period) and data.get('status') == 'Absent':
+                            absent_count += 1
+                    
+                    daily_rate = basic_salary / 30.0 if basic_salary > 0 else 0.0
+                    absent_deduction = round(daily_rate * absent_count, 2)
+                    
+                    # Find advances
+                    advance_deduction = 0.0
+                    adv_docs = db.collection('hrm_advances').where('employee', '==', emp_name).where('deduct_month', '==', target_period).stream()
+                    for doc in adv_docs:
+                        advance_deduction += float(doc.to_dict().get('amount', 0))
+                        
+                    # Tax deduction (5% of basic salary)
+                    tax_deduction = round(basic_salary * 0.05, 2)
+                    
+                    net_pay = round(gross_salary - absent_deduction - advance_deduction - tax_deduction, 2)
+                    if net_pay < 0:
+                        net_pay = 0.0
+                        
+                    total_net_pay += net_pay
+                
+                total_net_pay = round(total_net_pay, 2)
 
                 doc_id = request.POST.get('doc_id')
                 payload = {
@@ -958,6 +1000,86 @@ def payroll(request):
         'months': months,
         'years': years
     })
+
+from django.http import JsonResponse
+
+@login_required
+@module_access('hrm')
+def get_payslip(request):
+    emp_name = request.GET.get('employee')
+    month_name = request.GET.get('month')
+    year = request.GET.get('year')
+    
+    if not emp_name or not month_name or not year:
+        return JsonResponse({'error': 'Missing parameters'}, status=400)
+        
+    months_map = {
+        'January': '01', 'February': '02', 'March': '03', 'April': '04',
+        'May': '05', 'June': '06', 'July': '07', 'August': '08',
+        'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    }
+    month_num = months_map.get(month_name)
+    if not month_num:
+        return JsonResponse({'error': 'Invalid month'}, status=400)
+        
+    target_period = f"{year}-{month_num}"
+    
+    try:
+        # 1. Fetch employee
+        emp_query = list(db.collection('employees').where('name', '==', emp_name).stream())
+        if not emp_query:
+            return JsonResponse({'error': 'Employee not found'}, status=404)
+        emp_data = emp_query[0].to_dict()
+        
+        basic_salary = float(emp_data.get('basic_salary', 0))
+        house_rent = float(emp_data.get('house_rent', 0))
+        medical_allowance = float(emp_data.get('medical_allowance', 0))
+        gross_salary = float(emp_data.get('gross_salary', 0))
+        
+        # 2. Count absent days from hrm_attendance
+        absent_count = 0
+        att_docs = db.collection('hrm_attendance').where('name', '==', emp_name).stream()
+        for doc in att_docs:
+            data = doc.to_dict()
+            att_date = data.get('date', '')
+            status = data.get('status', '')
+            if att_date.startswith(target_period) and status == 'Absent':
+                absent_count += 1
+                
+        # Calculate absent deduction: (basic_salary / 30) * absent_count
+        daily_rate = basic_salary / 30.0 if basic_salary > 0 else 0.0
+        absent_deduction = round(daily_rate * absent_count, 2)
+        
+        # 3. Fetch advances for this month
+        advance_deduction = 0.0
+        adv_docs = db.collection('hrm_advances').where('employee', '==', emp_name).where('deduct_month', '==', target_period).stream()
+        for doc in adv_docs:
+            data = doc.to_dict()
+            advance_deduction += float(data.get('amount', 0))
+            
+        # Tax deduction (5% of basic salary)
+        tax_deduction = round(basic_salary * 0.05, 2)
+        
+        # Net Pay calculation
+        net_pay = round(gross_salary - absent_deduction - advance_deduction - tax_deduction, 2)
+        if net_pay < 0:
+            net_pay = 0.0
+            
+        return JsonResponse({
+            'employee': emp_name,
+            'period': f"{month_name} {year}",
+            'basic_salary': basic_salary,
+            'house_rent': house_rent,
+            'medical_allowance': medical_allowance,
+            'absent_days': absent_count,
+            'absent_deduction': absent_deduction,
+            'advance_deduction': advance_deduction,
+            'tax_deduction': tax_deduction,
+            'net_pay': net_pay
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @module_access('hrm')
 def reports(request):

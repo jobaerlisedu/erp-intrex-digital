@@ -11,6 +11,7 @@ urlpatterns = [
     path('attendance/', views.attendance, name='attendance'),
     path('leave/', views.leave, name='leave'),
     path('payroll/', views.payroll, name='payroll'),
+    path('payroll/get-payslip/', views.get_payslip, name='get_payslip'),
     path('reports/', views.reports, name='reports'),
     path('onboarding/', views.onboarding_offboarding, name='onboarding_offboarding'),
     path('roster/', views.roster_management, name='roster_management'),

@@ -283,24 +283,65 @@ function filterAdvances() {
 }
 
 function showPayslip() {
-    // In a real application, this would fetch payslip data via AJAX and render it in the preview area
-    document.getElementById('payslip-preview-area').innerHTML = `
-        <div style="text-align: left; color: var(--text-primary);">
-            <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-color);">Payslip Generated</h3>
-            <p><strong>Employee:</strong> Selected Employee</p>
-            <p><strong>Period:</strong> Selected Month, Selected Year</p>
-            <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 20px 0;">
-            <table style="width: 100%; text-align: left;">
-                <tr><td style="padding: 8px 0;">Basic Salary</td><td style="text-align: right;">$0.00</td></tr>
-                <tr><td style="padding: 8px 0;">House Rent Allowance</td><td style="text-align: right;">$0.00</td></tr>
-                <tr><td style="padding: 8px 0;">Medical Allowance</td><td style="text-align: right;">$0.00</td></tr>
-                <tr><td style="padding: 8px 0; color: #ef4444;">Advance Deduction</td><td style="text-align: right; color: #ef4444;">-$0.00</td></tr>
-                <tr><td style="padding: 8px 0; color: #ef4444;">Tax Deduction</td><td style="text-align: right; color: #ef4444;">-$0.00</td></tr>
-                <tr><td colspan="2"><hr style="border: 0; border-top: 1px dashed var(--sidebar-border); margin: 10px 0;"></td></tr>
-                <tr><td><strong>Net Pay</strong></td><td style="text-align: right;"><strong>$0.00</strong></td></tr>
-            </table>
+    const empName = document.querySelector('select[name="emp_name"]').value;
+    const month = document.querySelector('select[name="month"]').value;
+    const year = document.querySelector('select[name="year"]').value;
+    
+    if (!empName || !month || !year) {
+        alert("Please select employee, month, and year.");
+        return;
+    }
+    
+    const previewArea = document.getElementById('payslip-preview-area');
+    previewArea.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 12px; color: var(--accent-color);"></i>
+            <p>Fetching payslip data...</p>
         </div>
     `;
+    
+    fetch(`/hrm/payroll/get-payslip/?employee=${encodeURIComponent(empName)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`)
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || "Failed to load payslip data.");
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            previewArea.innerHTML = `
+                <div style="text-align: left; color: var(--text-primary);">
+                    <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-color);">Payslip Generated</h3>
+                    <p><strong>Employee:</strong> ${data.employee}</p>
+                    <p><strong>Period:</strong> ${data.period}</p>
+                    <hr style="border: 0; border-top: 1px solid var(--sidebar-border); margin: 20px 0;">
+                    <table style="width: 100%; text-align: left;">
+                        <tr><td style="padding: 8px 0;">Basic Salary</td><td style="text-align: right;">$${data.basic_salary.toFixed(2)}</td></tr>
+                        <tr><td style="padding: 8px 0;">House Rent Allowance</td><td style="text-align: right;">$${data.house_rent.toFixed(2)}</td></tr>
+                        <tr><td style="padding: 8px 0;">Medical Allowance</td><td style="text-align: right;">$${data.medical_allowance.toFixed(2)}</td></tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #ef4444;">
+                                Absent Deduction (${data.absent_days} Days absent)
+                            </td>
+                            <td style="text-align: right; color: #ef4444;">-$${data.absent_deduction.toFixed(2)}</td>
+                        </tr>
+                        <tr><td style="padding: 8px 0; color: #ef4444;">Advance Deduction</td><td style="text-align: right; color: #ef4444;">-$${data.advance_deduction.toFixed(2)}</td></tr>
+                        <tr><td style="padding: 8px 0; color: #ef4444;">Tax Deduction (5%)</td><td style="text-align: right; color: #ef4444;">-$${data.tax_deduction.toFixed(2)}</td></tr>
+                        <tr><td colspan="2"><hr style="border: 0; border-top: 1px dashed var(--sidebar-border); margin: 10px 0;"></td></tr>
+                        <tr><td><strong>Net Pay</strong></td><td style="text-align: right;"><strong>$${data.net_pay.toFixed(2)}</strong></td></tr>
+                    </table>
+                </div>
+            `;
+        })
+        .catch(err => {
+            previewArea.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size: 2.5rem; margin-bottom: 16px;"></i>
+                    <p>${err.message}</p>
+                </div>
+            `;
+        });
 }
 
 initPage();
