@@ -58,9 +58,29 @@
 .empty-state i { font-size:2.5rem; color:#cbd5e1; margin-bottom:12px; }
 
 .messages-list { margin-bottom:20px; }
-.msg { padding:12px 18px; border-radius:8px; font-size:0.9rem; font-weight:500; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+.msg { padding:12px 40px 12px 18px; border-radius:8px; font-size:0.9rem; font-weight:500; margin-bottom:8px; display:flex; align-items:center; gap:10px; position:relative; }
 .msg.success { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
 .msg.error   { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+.alert-close-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+.alert-close-btn:hover {
+    opacity: 1;
+}
 </style>
 {% endblock %}
 
@@ -78,6 +98,7 @@
     <div class="msg {{ message.tags }}">
         <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
         {{ message }}
+        <button class="alert-close-btn" onclick="this.parentElement.style.display='none';"><i class="fa-solid fa-xmark"></i></button>
     </div>
     {% endfor %}
 </div>

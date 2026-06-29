@@ -224,14 +224,35 @@
     border: 1px solid #fecaca;
     color: #991b1b;
     border-radius: 10px;
-    padding: 16px;
+    padding: 16px 40px 16px 16px;
     margin-bottom: 24px;
     display: flex;
     align-items: center;
     gap: 12px;
     font-weight: 600;
+    position: relative;
 }
 .alert-banner i { font-size: 1.25rem; }
+.alert-close-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.15rem;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+.alert-close-btn:hover {
+    opacity: 1;
+}
 </style>
 {% endblock %}
 
@@ -247,6 +268,7 @@
 <div class="alert-banner">
     <i class="fa-solid fa-circle-exclamation"></i>
     <span>WARNING: Cryptographic integrity verification failed! One or more audit log hashes do not match the chain. Data modification detected in ids: {{ compromised_log_ids|join:", " }}.</span>
+    <button class="alert-close-btn" onclick="this.parentElement.style.display='none';"><i class="fa-solid fa-xmark"></i></button>
 </div>
 {% endif %}
 
@@ -254,6 +276,7 @@
 <div class="alert-banner" style="background:#fffbeb; border-color:#fef3c7; color:#92400e;">
     <i class="fa-solid fa-triangle-exclamation" style="color:#d97706;"></i>
     <span>Security Telemetry: {% if failed_logins_24h >= 5 %}{{ failed_logins_24h }} failed login attempts detected in last 24h. {% endif %}{% if has_mass_exports_24h %}Recent data exports detected. Please monitor access logs.{% endif %}</span>
+    <button class="alert-close-btn" onclick="this.parentElement.style.display='none';"><i class="fa-solid fa-xmark"></i></button>
 </div>
 {% endif %}
 
