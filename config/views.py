@@ -104,6 +104,31 @@ def erp_dashboard(request):
         except Exception as e:
             print(f"Error fetching audit logs: {e}")
 
+    # 7. User Stats
+    user_stats = {'total_users': 0, 'active_users': 0}
+    try:
+        from django.contrib.auth.models import User
+        user_stats['total_users'] = User.objects.count()
+        user_stats['active_users'] = User.objects.filter(is_active=True).count()
+    except Exception as e:
+        print(f"Error fetching User stats: {e}")
+
+    # 8. Documentation Stats
+    docs_stats = {'total_pages': 0}
+    try:
+        import os
+        from django.conf import settings
+        base_docs_path = os.path.join(settings.BASE_DIR, 'docs-portal', 'docs')
+        total_md_files = 0
+        if os.path.exists(base_docs_path):
+            for root, dirs, files in os.walk(base_docs_path):
+                for file in files:
+                    if file.endswith('.md'):
+                        total_md_files += 1
+        docs_stats['total_pages'] = total_md_files
+    except Exception as e:
+        print(f"Error fetching Docs stats: {e}")
+
     context = {
         'hrm': hrm_stats,
         'inventory': inventory_stats,
@@ -111,6 +136,8 @@ def erp_dashboard(request):
         'billing': billing_stats,
         'solutions': solutions_stats,
         'training': training_stats,
+        'user_stats': user_stats,
+        'docs_stats': docs_stats,
         'aggregate': aggregate_stats,
         'audit_logs': audit_logs,
     }

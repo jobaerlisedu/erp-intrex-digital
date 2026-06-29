@@ -37,3 +37,34 @@ class DocumentationAJAXTestCase(TestCase):
         self.assertIn('html_content', data)
         self.assertIn('current_path', data)
         self.assertEqual(data['current_path'], 'index.md')
+
+
+class DashboardTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.username = 'testadmin'
+        self.password = 'password123'
+        if not User.objects.filter(username=self.username).exists():
+            self.user = User.objects.create_superuser(
+                username=self.username,
+                email='testadmin@example.com',
+                password=self.password
+            )
+
+    def test_dashboard_view_and_context(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(reverse('erp_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'erp/dashboard.html')
+        
+        # Verify user_stats and docs_stats in context
+        self.assertIn('user_stats', response.context)
+        self.assertIn('docs_stats', response.context)
+        
+        # Verify correct user count
+        self.assertEqual(response.context['user_stats']['total_users'], User.objects.count())
+        
+        # Verify rendered content has the cards
+        self.assertContains(response, 'User Management')
+        self.assertContains(response, 'Documentation')
+
