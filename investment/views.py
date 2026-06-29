@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib import messages
 from config.firebase import db
 from google.cloud import firestore
 from django.contrib.auth.decorators import login_required
@@ -152,11 +153,14 @@ def investor_list(request):
                 if 'created_at' in data:
                     del data['created_at']
                 db.collection('investors').document(doc_id).update(data)
+                messages.success(request, "Investor profile updated successfully!")
             else:
                 db.collection('investors').add(data)
+                messages.success(request, "Investor profile registered successfully!")
 
         elif action == 'delete_investor' and doc_id:
             db.collection('investors').document(doc_id).delete()
+            messages.success(request, "Investor profile deleted successfully!")
 
         return redirect('investment:investor_list')
 
@@ -230,11 +234,14 @@ def inbound_list(request):
                 if 'created_at' in data:
                     del data['created_at']
                 db.collection('investment_transactions').document(doc_id).update(data)
+                messages.success(request, "Inbound investment transaction updated successfully.")
             else:
                 db.collection('investment_transactions').add(data)
+                messages.success(request, "Inbound investment transaction logged successfully.")
 
         elif action == 'delete_inbound' and doc_id:
             db.collection('investment_transactions').document(doc_id).delete()
+            messages.success(request, "Inbound investment transaction deleted successfully.")
 
         return redirect('investment:inbound_list')
 
@@ -310,6 +317,7 @@ def loans_list(request):
                 })
 
             batch.commit()
+            messages.success(request, "Investor loan and amortization schedule registered successfully.")
 
         elif action == 'delete_loan' and doc_id:
             # Delete loan
@@ -320,6 +328,7 @@ def loans_list(request):
             for s in schedules:
                 batch.delete(s.reference)
             batch.commit()
+            messages.success(request, "Investor loan and amortization schedule deleted successfully.")
 
         return redirect('investment:loans_list')
 
@@ -346,11 +355,14 @@ def outbound_list(request):
 
             if doc_id:
                 db.collection('outbound_investments').document(doc_id).update(data)
+                messages.success(request, "Outbound investment record updated successfully.")
             else:
                 db.collection('outbound_investments').add(data)
+                messages.success(request, "Outbound investment record logged successfully.")
 
         elif action == 'delete_outbound' and doc_id:
             db.collection('outbound_investments').document(doc_id).delete()
+            messages.success(request, "Outbound investment record deleted successfully.")
 
         return redirect('investment:outbound_list')
 
@@ -376,11 +388,14 @@ def instruments_list(request):
 
             if doc_id:
                 db.collection('financial_instruments').document(doc_id).update(data)
+                messages.success(request, "Financial instrument updated successfully.")
             else:
                 db.collection('financial_instruments').add(data)
+                messages.success(request, "Financial instrument registered successfully.")
 
         elif action == 'delete_instrument' and doc_id:
             db.collection('financial_instruments').document(doc_id).delete()
+            messages.success(request, "Financial instrument deleted successfully.")
 
         return redirect('investment:instruments_list')
 
@@ -420,11 +435,14 @@ def pl_list(request):
                 if 'created_at' in data:
                     del data['created_at']
                 db.collection('pl_ledger_monthly').document(doc_id).update(data)
+                messages.success(request, "Profit/Loss entry updated successfully.")
             else:
                 db.collection('pl_ledger_monthly').add(data)
+                messages.success(request, "Profit/Loss entry registered successfully.")
 
         elif action == 'delete_pl' and doc_id:
             db.collection('pl_ledger_monthly').document(doc_id).delete()
+            messages.success(request, "Profit/Loss entry deleted successfully.")
 
         return redirect('investment:pl_list')
 
@@ -482,6 +500,7 @@ def payables_list(request):
                         'notes': f"Repayment installment #{sch_data.get('installment_number')} for loan {loan_id}.",
                         'created_at': firestore.SERVER_TIMESTAMP
                     })
+                    messages.success(request, "Loan installment payment cleared and payout logged successfully.")
 
         return redirect('investment:payables_list')
 

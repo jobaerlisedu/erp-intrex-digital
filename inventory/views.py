@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib import messages
 from config.firebase import db
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import module_access
@@ -85,21 +86,26 @@ def requisitions_list(request):
 
             if doc_id:
                 db.collection('requisitions').document(doc_id).update(data)
+                messages.success(request, "Requisition updated successfully.")
             else:
                 # Generate unique requisition code
                 count = len(list(db.collection('requisitions').stream()))
                 data['requisition_code'] = f"REQ-{datetime.now().year}-{count + 1001}"
                 data['created_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 db.collection('requisitions').add(data)
+                messages.success(request, "Requisition submitted successfully.")
 
         elif action == 'approve_requisition' and doc_id:
             db.collection('requisitions').document(doc_id).update({'status': 'Approved'})
+            messages.success(request, "Requisition approved successfully.")
         
         elif action == 'reject_requisition' and doc_id:
             db.collection('requisitions').document(doc_id).update({'status': 'Rejected'})
+            messages.success(request, "Requisition rejected successfully.")
 
         elif action == 'delete_requisition' and doc_id:
             db.collection('requisitions').document(doc_id).delete()
+            messages.success(request, "Requisition deleted successfully.")
 
         return redirect('inventory:requisitions_list')
 
@@ -142,13 +148,16 @@ def vendors_list(request):
 
             if doc_id:
                 db.collection('vendors').document(doc_id).update(data)
+                messages.success(request, "Vendor details updated successfully.")
             else:
                 count = len(list(db.collection('vendors').stream()))
                 data['vendor_code'] = f"VND-{count + 1001}"
                 db.collection('vendors').add(data)
+                messages.success(request, "Vendor details registered successfully.")
 
         elif action == 'delete_vendor' and doc_id:
             db.collection('vendors').document(doc_id).delete()
+            messages.success(request, "Vendor details deleted successfully.")
 
         return redirect('inventory:vendors_list')
 
@@ -189,6 +198,7 @@ def rfq_list(request):
 
             # Update Requisition status
             db.collection('requisitions').document(req_id).update({'status': 'Procuring'})
+            messages.success(request, "Request for Quotation (RFQ) created successfully.")
 
         elif action == 'add_quotation':
             rfq_id = request.POST.get('rfq_id')
@@ -223,6 +233,7 @@ def rfq_list(request):
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             db.collection('quotations').add(data)
+            messages.success(request, "Vendor quotation added successfully.")
 
         elif action == 'accept_quotation' and doc_id:
             # Get quotation
@@ -269,6 +280,7 @@ def rfq_list(request):
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             db.collection('purchase_orders').add(po_data)
+            messages.success(request, "Quotation accepted; purchase order created successfully.")
 
         elif action == 'delete_rfq' and doc_id:
             db.collection('rfqs').document(doc_id).delete()
@@ -276,6 +288,7 @@ def rfq_list(request):
             quotes = db.collection('quotations').where('rfq_id', '==', doc_id).stream()
             for q in quotes:
                 db.collection('quotations').document(q.id).delete()
+            messages.success(request, "Request for Quotation deleted successfully.")
 
         return redirect('inventory:rfq_list')
 
@@ -317,12 +330,15 @@ def po_list(request):
 
         if action == 'approve_po' and doc_id:
             db.collection('purchase_orders').document(doc_id).update({'status': 'Approved'})
+            messages.success(request, "Purchase Order approved successfully.")
         
         elif action == 'cancel_po' and doc_id:
             db.collection('purchase_orders').document(doc_id).update({'status': 'Cancelled'})
+            messages.success(request, "Purchase Order cancelled successfully.")
             
         elif action == 'delete_po' and doc_id:
             db.collection('purchase_orders').document(doc_id).delete()
+            messages.success(request, "Purchase Order deleted successfully.")
 
         return redirect('inventory:po_list')
 
@@ -444,9 +460,11 @@ def grn_list(request):
             req_id = po_data.get('requisition_id')
             if req_id and po_status == 'Fulfilled':
                 db.collection('requisitions').document(req_id).update({'status': 'Partially Received'})
+            messages.success(request, "Goods Receipt Note (GRN) created and stock updated successfully.")
 
         elif action == 'delete_grn' and doc_id:
             db.collection('goods_receipts').document(doc_id).delete()
+            messages.success(request, "Goods Receipt Note deleted successfully.")
 
         return redirect('inventory:grn_list')
 
@@ -499,6 +517,7 @@ def stock_list(request):
                         'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     })
                 db.collection('products').document(doc_id).update(data)
+                messages.success(request, "Product details updated successfully.")
             else:
                 # Log initial ledger entry
                 db.collection('inventory_ledger').add({
@@ -509,9 +528,11 @@ def stock_list(request):
                     'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 })
                 db.collection('products').add(data)
+                messages.success(request, "Product registered successfully.")
 
         elif action == 'delete_product' and doc_id:
             db.collection('products').document(doc_id).delete()
+            messages.success(request, "Product deleted successfully.")
 
         return redirect('inventory:stock_list')
 
@@ -593,6 +614,7 @@ def delivery_list(request):
 
                         # Mark Requisition as Completed
                         req_ref.update({'status': 'Completed'})
+                messages.success(request, "Delivery challan status updated successfully.")
             else:
                 challan_count = len(list(db.collection('deliveries').stream()))
                 data['challan_code'] = f"CHL-{datetime.now().year}-{challan_count + 1001}"
@@ -600,9 +622,11 @@ def delivery_list(request):
 
                 # Update Requisition status
                 req_ref.update({'status': 'Dispatched'})
+                messages.success(request, "Delivery challan created and status set to Dispatched successfully.")
 
         elif action == 'delete_delivery' and doc_id:
             db.collection('deliveries').document(doc_id).delete()
+            messages.success(request, "Delivery challan deleted successfully.")
 
         return redirect('inventory:delivery_list')
 

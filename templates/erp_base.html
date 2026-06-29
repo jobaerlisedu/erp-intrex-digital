@@ -21,6 +21,77 @@
             --glass-shadow: 0 4px 20px rgba(33, 92, 92, 0.05);
         }
 
+        /* Global Alert Messages */
+        .global-messages {
+            margin: 0 0 24px 0;
+            width: 100%;
+        }
+        .global-msg {
+            padding: 14px 44px 14px 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            border: 1px solid;
+            animation: globalMsgFadeIn 0.3s ease;
+        }
+        .global-msg.success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .global-msg.error, .global-msg.danger {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+        .global-msg.warning {
+            background-color: #fffbeb;
+            color: #92400e;
+            border-color: #fef3c7;
+        }
+        .global-msg.info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+        .global-msg i {
+            font-size: 1.1rem;
+        }
+        .global-msg.success i { color: #10b981; }
+        .global-msg.error i, .global-msg.danger i { color: #ef4444; }
+        .global-msg.warning i { color: #f59e0b; }
+        .global-msg.info i { color: #3b82f6; }
+        
+        .global-msg .alert-close-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.15rem;
+            cursor: pointer;
+            opacity: 0.65;
+            transition: opacity 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+        .global-msg .alert-close-btn:hover {
+            opacity: 1;
+        }
+        @keyframes globalMsgFadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
 
 
         body {
@@ -1222,6 +1293,18 @@
         </header>
 
         <main class="content-area">
+            {% if messages %}
+            <div class="global-messages">
+                {% for message in messages %}
+                <div class="global-msg {{ message.tags }}">
+                    <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' or message.tags == 'danger' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                    <span>{{ message }}</span>
+                    <button class="alert-close-btn" onclick="this.parentElement.style.display='none';"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             {% block content %}
             {% endblock %}
         </main>

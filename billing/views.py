@@ -130,14 +130,17 @@ def chart_of_accounts(request):
                 old_snap = db.collection('chart_of_accounts').document(doc_id).get().to_dict()
                 db.collection('chart_of_accounts').document(doc_id).update(data)
                 log_audit('UPDATE_ACCOUNT', request.user.username, old_snap, data)
+                messages.success(request, "Account updated successfully.")
             else:
                 db.collection('chart_of_accounts').add(data)
                 log_audit('CREATE_ACCOUNT', request.user.username, {}, data)
+                messages.success(request, "Account created successfully.")
 
         elif action == 'delete_account' and doc_id:
             old_snap = db.collection('chart_of_accounts').document(doc_id).get().to_dict()
             db.collection('chart_of_accounts').document(doc_id).delete()
             log_audit('DELETE_ACCOUNT', request.user.username, old_snap, {})
+            messages.success(request, "Account deleted successfully.")
 
         return redirect('billing:chart_of_accounts')
 
@@ -200,12 +203,14 @@ def general_journal(request):
                 old_snap = db.collection('journal_entries').document(doc_id).get().to_dict()
                 db.collection('journal_entries').document(doc_id).update(data)
                 log_audit('UPDATE_JOURNAL', request.user.username, old_snap, data)
+                messages.success(request, "Journal entry draft updated successfully.")
             else:
                 count = len(list(db.collection('journal_entries').stream()))
                 data['entry_code'] = f"JE-{datetime.now().year}-{count + 1001}"
                 data['created_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 db.collection('journal_entries').add(data)
                 log_audit('CREATE_JOURNAL', request.user.username, {}, data)
+                messages.success(request, "Journal entry draft created successfully.")
 
         elif action == 'post_journal' and doc_id:
             je_ref = db.collection('journal_entries').document(doc_id)
@@ -223,12 +228,14 @@ def general_journal(request):
                 'approved_by': request.user.username
             })
             log_audit('POST_JOURNAL', request.user.username, je_data, {'status': 'Posted', 'approved_by': request.user.username})
+            messages.success(request, "Journal entry approved and posted successfully.")
 
         elif action == 'void_journal' and doc_id:
             je_ref = db.collection('journal_entries').document(doc_id)
             je_data = je_ref.get().to_dict()
             je_ref.update({'status': 'Voided'})
             log_audit('VOID_JOURNAL', request.user.username, je_data, {'status': 'Voided'})
+            messages.success(request, "Journal entry voided successfully.")
 
         elif action == 'delete_journal' and doc_id:
             old_snap = db.collection('journal_entries').document(doc_id).get().to_dict()
@@ -238,6 +245,7 @@ def general_journal(request):
             else:
                 db.collection('journal_entries').document(doc_id).delete()
                 log_audit('DELETE_JOURNAL', request.user.username, old_snap, {})
+                messages.success(request, "Journal entry draft deleted successfully.")
 
         return redirect('billing:general_journal')
 
@@ -296,6 +304,7 @@ def ar_invoices(request):
                 old_snap = db.collection('invoices').document(doc_id).get().to_dict()
                 db.collection('invoices').document(doc_id).update(data)
                 log_audit('UPDATE_INVOICE', request.user.username, old_snap, data)
+                messages.success(request, "Invoice updated successfully.")
             else:
                 db.collection('invoices').add(data)
                 log_audit('CREATE_INVOICE', request.user.username, {}, data)
@@ -318,11 +327,13 @@ def ar_invoices(request):
                         lines=lines,
                         user=request.user
                     )
+                messages.success(request, "Invoice created and automated journal entries posted successfully.")
 
         elif action == 'record_payment' and doc_id:
             inv_ref = db.collection('invoices').document(doc_id)
             inv_data = inv_ref.get().to_dict()
 
+            # Settlement calculation
             pay_amount = float(request.POST.get('amount', 0.0))
             grand_total = float(inv_data.get('grand_total', 0.0))
 
@@ -360,11 +371,13 @@ def ar_invoices(request):
                     lines=lines,
                     user=request.user
                 )
+            messages.success(request, "Payment receipt logged and automated settlement journal entries posted successfully.")
 
         elif action == 'delete_invoice' and doc_id:
             old_snap = db.collection('invoices').document(doc_id).get().to_dict()
             db.collection('invoices').document(doc_id).delete()
             log_audit('DELETE_INVOICE', request.user.username, old_snap, {})
+            messages.success(request, "Invoice deleted successfully.")
 
         return redirect('billing:ar_invoices')
 
@@ -407,6 +420,7 @@ def ap_bills(request):
                 old_snap = db.collection('vendor_bills').document(doc_id).get().to_dict()
                 db.collection('vendor_bills').document(doc_id).update(data)
                 log_audit('UPDATE_BILL', request.user.username, old_snap, data)
+                messages.success(request, "Vendor bill updated successfully.")
             else:
                 db.collection('vendor_bills').add(data)
                 log_audit('CREATE_BILL', request.user.username, {}, data)
@@ -429,6 +443,7 @@ def ap_bills(request):
                         lines=lines,
                         user=request.user
                     )
+                messages.success(request, "Vendor bill created and automated expense journal entries posted successfully.")
 
         elif action == 'pay_bill' and doc_id:
             bill_ref = db.collection('vendor_bills').document(doc_id)
@@ -457,11 +472,13 @@ def ap_bills(request):
                     lines=lines,
                     user=request.user
                 )
+            messages.success(request, "Vendor bill status set to Paid and automated payment clearing journal entries posted successfully.")
 
         elif action == 'delete_bill' and doc_id:
             old_snap = db.collection('vendor_bills').document(doc_id).get().to_dict()
             db.collection('vendor_bills').document(doc_id).delete()
             log_audit('DELETE_BILL', request.user.username, old_snap, {})
+            messages.success(request, "Vendor bill deleted successfully.")
 
         return redirect('billing:ap_bills')
 
@@ -496,14 +513,17 @@ def tax_center(request):
                 old_snap = db.collection('tax_codes').document(doc_id).get().to_dict()
                 db.collection('tax_codes').document(doc_id).update(data)
                 log_audit('UPDATE_TAX_CODE', request.user.username, old_snap, data)
+                messages.success(request, "Tax code details updated successfully.")
             else:
                 db.collection('tax_codes').add(data)
                 log_audit('CREATE_TAX_CODE', request.user.username, {}, data)
+                messages.success(request, "Tax code created successfully.")
 
         elif action == 'delete_tax_code' and doc_id:
             old_snap = db.collection('tax_codes').document(doc_id).get().to_dict()
             db.collection('tax_codes').document(doc_id).delete()
             log_audit('DELETE_TAX_CODE', request.user.username, old_snap, {})
+            messages.success(request, "Tax code deleted successfully.")
 
         return redirect('billing:tax_center')
 

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from config.firebase import db
@@ -240,10 +241,12 @@ def inquiries(request):
         if action == 'delete' and doc_id:
             db.collection('learn_online_inquiries').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_online_inquiries", doc_id, f"Deleted course inquiry ID {doc_id}")
+            messages.success(request, "Inquiry deleted successfully!")
             return redirect('/training/inquiries/?tab=directory')
         elif action == 'delete_online_reg' and doc_id:
             db.collection('learn_online_registrations').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_online_registrations", doc_id, f"Deleted online registration ID {doc_id}")
+            messages.success(request, "Online registration deleted successfully!")
             return redirect('/training/inquiries/?tab=pending')
         else:
             inquiry_key = get_next_seq_id('learn_online_inquiries', 'INQ-', 'inquiryKey', 6)
@@ -260,6 +263,7 @@ def inquiries(request):
             }
             db.collection('learn_online_inquiries').document(inquiry_key).set(data)
             log_training_action(request.user, "CREATE", "learn_online_inquiries", inquiry_key, f"Logged manual inquiry: {data['name']} - {data['subject']}")
+            messages.success(request, "Inquiry saved successfully!")
             return redirect('/training/inquiries/?tab=directory')
 
     inquiries_list = get_collection_data('learn_online_inquiries')
@@ -305,6 +309,7 @@ def contact_directory(request):
         if action == 'delete' and doc_id:
             db.collection('learn_public_institutes').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_public_institutes", doc_id, f"Deleted public institute record ID {doc_id}")
+            messages.success(request, "Institute contact deleted successfully!")
         else:
             is_new = not doc_id
             if is_new:
@@ -333,6 +338,7 @@ def contact_directory(request):
                 doc_id, 
                 f"{'Registered' if is_new else 'Updated'} public training institute: {data['name']}"
             )
+            messages.success(request, "Institute contact saved successfully!")
         return redirect('training:contact_directory')
 
     students = get_collection_data('learn_registrations')
@@ -381,6 +387,7 @@ def brand_ambassadors(request):
         if action == 'delete' and doc_id:
             db.collection('learn_brand_ambassadors').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_brand_ambassadors", doc_id, f"Deleted brand ambassador record ID {doc_id}")
+            messages.success(request, "Brand ambassador deleted successfully!")
         else:
             is_new = not doc_id
             if is_new:
@@ -413,6 +420,7 @@ def brand_ambassadors(request):
                 doc_id, 
                 f"{'Registered' if is_new else 'Updated'} brand ambassador: {data['name']}"
             )
+            messages.success(request, "Brand ambassador saved successfully!")
         return redirect('training:brand_ambassadors')
 
     ambassadors = get_collection_data('learn_brand_ambassadors')
@@ -430,6 +438,7 @@ def course_creation(request):
         if action == 'delete' and doc_id:
             db.collection('learn_courses').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_courses", doc_id, f"Deleted course ID {doc_id}")
+            messages.success(request, "Course deleted successfully!")
         else:
             title = request.POST.get('title')
             clean_title = title.strip()
@@ -448,6 +457,7 @@ def course_creation(request):
             }
             db.collection('learn_courses').document(clean_title).set(data, merge=True)
             log_training_action(request.user, "CREATE", "learn_courses", clean_title, f"Saved training course: {clean_title}")
+            messages.success(request, "Course saved successfully!")
         return redirect('training:course_creation')
 
     courses = get_collection_data('learn_courses')
@@ -468,6 +478,7 @@ def batch_management(request):
         if action == 'delete' and doc_id:
             db.collection('learn_batches').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_batches", doc_id, f"Deleted batch ID {doc_id}")
+            messages.success(request, "Batch deleted successfully!")
         else:
             batch_id = request.POST.get('batchId')
             data = {
@@ -486,6 +497,7 @@ def batch_management(request):
             }
             db.collection('learn_batches').document(batch_id).set(data, merge=True)
             log_training_action(request.user, "CREATE", "learn_batches", batch_id, f"Saved training batch: {batch_id} for course {data['courseName']}")
+            messages.success(request, "Batch saved successfully!")
         return redirect('training:batch_management')
 
     batches = get_collection_data('learn_batches')
@@ -508,6 +520,7 @@ def class_calendar(request):
         if action == 'delete' and doc_id:
             db.collection('learn_classes').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_classes", doc_id, f"Cancelled scheduled class ID {doc_id}")
+            messages.success(request, "Scheduled class cancelled successfully!")
         else:
             data = {
                 'class_title': request.POST.get('class_title'),
@@ -519,6 +532,7 @@ def class_calendar(request):
             }
             db.collection('learn_classes').add(data)
             log_training_action(request.user, "CREATE", "learn_classes", "new_class", f"Scheduled class: {data['class_title']}")
+            messages.success(request, "Class scheduled successfully!")
         return redirect('training:class_calendar')
 
     classes = get_collection_data('learn_classes')
@@ -557,11 +571,13 @@ def student_list(request):
             db.collection('learn_registrations').document(doc_id).delete()
             db.collection('learn_payments').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_registrations", doc_id, f"Removed student enrollment registration: {doc_id}")
+            messages.success(request, "Student enrollment deleted successfully!")
             return redirect('training:student_list')
             
         elif action == 'delete_online_reg' and doc_id:
             db.collection('learn_online_registrations').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_online_registrations", doc_id, f"Deleted online registration ID {doc_id}")
+            messages.success(request, "Online registration deleted successfully!")
             return redirect('training:student_list')
             
         else:
@@ -597,7 +613,7 @@ def student_list(request):
             all_regs = get_collection_data('learn_registrations')
             for r in all_regs:
                 if r.get('batch') == batch and r.get('id') != doc_id:
-                    existing_count += 1
+                     existing_count += 1
             
             if existing_count >= batch_capacity:
                 # Return error
@@ -653,6 +669,7 @@ def student_list(request):
                     })
                 
                 log_training_action(request.user, "UPDATE", "learn_registrations", doc_id, f"Updated student registration: {fullName}")
+                messages.success(request, "Student enrollment updated successfully!")
                 
             else:
                 # Create
@@ -725,6 +742,7 @@ def student_list(request):
                 })
                 
                 log_training_action(request.user, "CREATE", "learn_registrations", generated_doc_id, f"Registered student {fullName} in course {course} batch {batch}")
+                messages.success(request, "Student enrollment saved successfully!")
                 
                 # If online registration or inquiry conversion
                 online_key = request.POST.get('onlineKey')
@@ -847,6 +865,7 @@ def installment_plan(request):
                 })
                 
                 log_training_action(request.user, "UPDATE", "payments", doc_id, f"Updated installment payment details for student record {doc_id}")
+                messages.success(request, "Payment plan updated successfully!")
                 
                 # Check for certificate trigger: due is 0 and student passed assessment
                 if due <= 0.0:
@@ -895,6 +914,7 @@ def expense_tracker(request):
         if action == 'delete' and doc_id:
             db.collection('learn_expenses').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_expenses", doc_id, f"Removed training expense ID {doc_id}")
+            messages.success(request, "Training expense removed successfully!")
         else:
             is_new = not doc_id
             if is_new:
@@ -911,6 +931,7 @@ def expense_tracker(request):
             }
             db.collection('learn_expenses').document(doc_id).set(data, merge=True)
             log_training_action(request.user, "CREATE" if is_new else "UPDATE", "learn_expenses", doc_id, f"Logged expense of {data['amount']} under category {data['category']}")
+            messages.success(request, "Training expense logged successfully!")
         return redirect('training:expense_tracker')
 
     expenses = get_collection_data('learn_expenses')
@@ -924,6 +945,7 @@ def sales_management(request):
         if action == 'delete' and doc_id:
             db.collection('learn_commissions').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_commissions", doc_id, f"Deleted sales commission payout ID {doc_id}")
+            messages.success(request, "Sales commission payout deleted successfully!")
         else:
             comm_id = get_next_seq_id('learn_commissions', 'COMM-', 'id', 4)
             data = {
@@ -940,6 +962,7 @@ def sales_management(request):
             }
             db.collection('learn_commissions').document(comm_id).set(data)
             log_training_action(request.user, "CREATE", "learn_commissions", comm_id, f"Created sales commission payout of {data['payoutAmount']} for {data['agentName']}")
+            messages.success(request, "Sales commission payout saved successfully!")
         return redirect('training:sales_management')
 
     commissions = get_collection_data('learn_commissions')
@@ -973,6 +996,7 @@ def course_assessments(request):
         if action == 'delete' and doc_id:
             db.collection('learn_course_assessments').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_course_assessments", doc_id, f"Deleted assessment record ID {doc_id}")
+            messages.success(request, "Course assessment deleted successfully!")
         else:
             studentId = request.POST.get('studentId').strip()
             courseName = request.POST.get('courseName')
@@ -994,6 +1018,7 @@ def course_assessments(request):
             }
             db.collection('learn_course_assessments').document(assess_id).set(data, merge=True)
             log_training_action(request.user, "CREATE", "learn_course_assessments", assess_id, f"Saved marks/grades assessment for student {data['studentName']} in course {courseName}")
+            messages.success(request, "Course assessment saved successfully!")
             
             # Check certificate trigger: student passed and outstanding balance is zero
             if data['status'] == 'Passed':
@@ -1041,6 +1066,7 @@ def certificates(request):
         if action == 'delete' and doc_id:
             db.collection('learn_certificates').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_certificates", doc_id, f"Deleted issued certificate ID {doc_id}")
+            messages.success(request, "Certificate deleted successfully!")
         else:
             cert_id = request.POST.get('certificateId').strip()
             data = {
@@ -1056,6 +1082,7 @@ def certificates(request):
             }
             db.collection('learn_certificates').document(cert_id).set(data)
             log_training_action(request.user, "CREATE", "learn_certificates", cert_id, f"Issued verification certificate to {data['studentName']} for course {data['courseName']}")
+            messages.success(request, "Verification certificate issued successfully!")
         return redirect('training:certificates')
 
     certificates_list = get_collection_data('learn_certificates')
@@ -1114,6 +1141,7 @@ def job_placement(request):
         if action == 'delete' and doc_id:
             db.collection('learn_job_placements').document(doc_id).delete()
             log_training_action(request.user, "DELETE", "learn_job_placements", doc_id, f"Deleted job placement record ID {doc_id}")
+            messages.success(request, "Job placement deleted successfully!")
         else:
             is_new = not doc_id
             if is_new:
@@ -1134,6 +1162,7 @@ def job_placement(request):
             }
             db.collection('learn_job_placements').document(doc_id).set(data, merge=True)
             log_training_action(request.user, "CREATE" if is_new else "UPDATE", "learn_job_placements", doc_id, f"Recorded job placement for graduate {data['studentName']} at {data['company']}")
+            messages.success(request, "Job placement recorded successfully!")
         return redirect('training:job_placement')
 
     placements = get_collection_data('learn_job_placements')

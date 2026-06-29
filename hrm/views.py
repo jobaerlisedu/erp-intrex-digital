@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib import messages
 from config.firebase import db
 from google.cloud import firestore
 from django.contrib.auth.decorators import login_required
@@ -115,11 +116,13 @@ def recruitment(request):
                 
                 if doc_id:
                     db.collection('hrm_candidates').document(doc_id).update(update_data)
+                    messages.success(request, "Candidate profile updated successfully.")
                 else:
                     cand_id = f"CAN-{random.randint(100, 999)}"
                     update_data['cand_id'] = cand_id
                     update_data['createdAt'] = firestore.SERVER_TIMESTAMP
                     db.collection('hrm_candidates').add(update_data)
+                    messages.success(request, "Candidate profile registered successfully.")
             except Exception as e:
                 print(f"Error adding candidate: {e}")
                 
@@ -153,6 +156,7 @@ def recruitment(request):
                             if 'createdAt' in update_data:
                                 del update_data['createdAt']
                             db.collection('hrm_shortlists').document(doc_id).update(update_data)
+                            messages.success(request, "Shortlist details updated successfully.")
                         else:
                             db.collection('hrm_shortlists').add({
                             'candidate_id': cand_doc_id,
@@ -162,6 +166,7 @@ def recruitment(request):
                             'experience': experience,
                             'createdAt': firestore.SERVER_TIMESTAMP
                         })
+                            messages.success(request, "Candidate added to shortlist successfully.")
                 except Exception as e:
                     print(f"Error adding shortlist candidate: {e}")
                     
@@ -197,6 +202,7 @@ def recruitment(request):
                             if 'createdAt' in update_data:
                                 del update_data['createdAt']
                             db.collection('hrm_interviews').document(doc_id).update(update_data)
+                            messages.success(request, "Interview schedule updated successfully.")
                         else:
                             db.collection('hrm_interviews').add({
                             'candidate_id': cand_doc_id,
@@ -207,6 +213,7 @@ def recruitment(request):
                             'status': status,
                             'createdAt': firestore.SERVER_TIMESTAMP
                         })
+                            messages.success(request, "Interview scheduled successfully.")
                 except Exception as e:
                     print(f"Error scheduling interview: {e}")
                     
@@ -241,6 +248,7 @@ def recruitment(request):
                             if 'createdAt' in update_data:
                                 del update_data['createdAt']
                             db.collection('hrm_selections').document(doc_id).update(update_data)
+                            messages.success(request, "Selection details updated successfully.")
                         else:
                             db.collection('hrm_selections').add({
                             'candidate_id': cand_doc_id,
@@ -250,6 +258,7 @@ def recruitment(request):
                             'offer_date': offer_date,
                             'createdAt': firestore.SERVER_TIMESTAMP
                         })
+                            messages.success(request, "Selection decision logged successfully.")
                 except Exception as e:
                     print(f"Error saving selection: {e}")
                     
@@ -269,6 +278,7 @@ def recruitment(request):
             if doc_id:
                 try:
                     db.collection(col_name).document(doc_id).delete()
+                    messages.success(request, "Record deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting doc from {col_name}: {e}")
                     
@@ -279,6 +289,7 @@ def recruitment(request):
             if doc_id and new_status:
                 try:
                     db.collection('hrm_candidates').document(doc_id).update({'status': new_status})
+                    messages.success(request, f"Candidate status updated to {new_status}.")
                 except Exception as e:
                     print(f"Error updating status: {e}")
                     
@@ -339,6 +350,7 @@ def department(request):
                     if 'createdAt' in update_data:
                         del update_data['createdAt']
                     db.collection('hrm_departments').document(doc_id).update(update_data)
+                    messages.success(request, "Department updated successfully.")
                 else:
                     db.collection('hrm_departments').add({
                     'name': request.POST.get('name'),
@@ -347,6 +359,7 @@ def department(request):
                     'notes': request.POST.get('notes', ''),
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                    messages.success(request, "Department added successfully.")
             except Exception as e:
                 print(f"Error adding department: {e}")
                 
@@ -384,6 +397,7 @@ def department(request):
                             if 'createdAt' in update_data:
                                 del update_data['createdAt']
                             db.collection('hrm_sub_departments').document(doc_id).update(update_data)
+                            messages.success(request, "Sub-department updated successfully.")
                         else:
                             db.collection('hrm_sub_departments').add({
                             'name': name,
@@ -393,6 +407,7 @@ def department(request):
                             'notes': notes,
                             'createdAt': firestore.SERVER_TIMESTAMP
                         })
+                            messages.success(request, "Sub-department added successfully.")
                 except Exception as e:
                     print(f"Error adding sub department: {e}")
                     
@@ -448,6 +463,7 @@ def department(request):
                             if 'createdAt' in update_data:
                                 del update_data['createdAt']
                             db.collection('hrm_positions').document(doc_id).update(update_data)
+                            messages.success(request, "Job position updated successfully.")
                         else:
                             db.collection('hrm_positions').add({
                                 'title': title,
@@ -458,6 +474,7 @@ def department(request):
                                 'status': status,
                                 'createdAt': firestore.SERVER_TIMESTAMP
                             })
+                            messages.success(request, "Job position added successfully.")
                 except Exception as e:
                     print(f"Error adding position: {e}")
                     
@@ -475,6 +492,7 @@ def department(request):
             if doc_id:
                 try:
                     db.collection(col_name).document(doc_id).delete()
+                    messages.success(request, "Record deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting doc from {col_name}: {e}")
                     
@@ -515,6 +533,7 @@ def employee_database(request):
             if doc_id:
                 try:
                     db.collection('employees').document(doc_id).delete()
+                    messages.success(request, "Employee record deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting employee: {e}")
             return redirect('hrm:employee_database')
@@ -592,6 +611,7 @@ def employee_database(request):
             if doc_id:
                 # Update existing employee
                 db.collection('employees').document(doc_id).update(data)
+                messages.success(request, "Employee profile updated successfully.")
             else:
                 # Generate new emp_id and add employee
                 existing = db.collection('employees').stream()
@@ -599,6 +619,7 @@ def employee_database(request):
                 data['emp_id'] = f"EMP-{count:04d}"
                 data['createdAt'] = firestore.SERVER_TIMESTAMP
                 db.collection('employees').add(data)
+                messages.success(request, "Employee profile registered successfully.")
         except Exception as e:
             print(f"Error saving employee: {e}")
         return redirect('hrm:employee_database')
@@ -638,6 +659,7 @@ def attendance(request):
             if doc_id:
                 try:
                     db.collection('hrm_attendance').document(doc_id).delete()
+                    messages.success(request, "Attendance record deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting attendance: {e}")
 
@@ -653,6 +675,7 @@ def attendance(request):
                     'createdAt': firestore.SERVER_TIMESTAMP
                 }
                 db.collection('hrm_attendance').add(data)
+                messages.success(request, "Missing attendance resolved successfully.")
             except Exception as e:
                 print(f"Error resolving missing attendance: {e}")
 
@@ -667,6 +690,7 @@ def attendance(request):
                     'createdAt': firestore.SERVER_TIMESTAMP
                 }
                 db.collection('hrm_attendance').add(att_data)
+                messages.success(request, "Attendance record logged successfully.")
             except Exception as e:
                 print(f"Error adding attendance log: {e}")
 
@@ -710,6 +734,7 @@ def leave(request):
                     if 'createdAt' in update_data:
                         del update_data['createdAt']
                     db.collection('hrm_holidays').document(doc_id).update(update_data)
+                    messages.success(request, "Holiday updated successfully.")
                 else:
                     db.collection('hrm_holidays').add({
                     'holiday_name': request.POST.get('holiday_name'),
@@ -718,6 +743,7 @@ def leave(request):
                     'type': request.POST.get('holiday_type', 'Public'),
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                    messages.success(request, "Holiday added successfully.")
             except Exception as e:
                 print(f"Error adding holiday: {e}")
 
@@ -726,6 +752,7 @@ def leave(request):
             if doc_id:
                 try:
                     db.collection('hrm_holidays').document(doc_id).delete()
+                    messages.success(request, "Holiday deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting holiday: {e}")
 
@@ -757,6 +784,7 @@ def leave(request):
                     if 'createdAt' in update_data:
                         del update_data['createdAt']
                     db.collection('hrm_leaves').document(doc_id).update(update_data)
+                    messages.success(request, "Leave request updated successfully.")
                 else:
                     db.collection('hrm_leaves').add({
                     'name': request.POST.get('emp_name'),
@@ -768,6 +796,7 @@ def leave(request):
                     'status': 'Pending',
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                    messages.success(request, "Leave request submitted successfully.")
             except Exception as e:
                 print(f"Error applying leave: {e}")
 
@@ -776,6 +805,7 @@ def leave(request):
             if doc_id:
                 try:
                     db.collection('hrm_leaves').document(doc_id).update({'status': lv_action})
+                    messages.success(request, f"Leave request status updated to {lv_action}.")
                 except Exception as e:
                     print(f"Error updating leave: {e}")
 
@@ -784,6 +814,7 @@ def leave(request):
             if doc_id:
                 try:
                     db.collection('hrm_leaves').document(doc_id).delete()
+                    messages.success(request, "Leave request deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting leave: {e}")
 
@@ -791,6 +822,7 @@ def leave(request):
             weekend_days = request.POST.getlist('weekend_days')
             try:
                 db.collection('hrm_settings').document('weekend').set({'days': weekend_days})
+                messages.success(request, "Weekend settings saved successfully.")
             except Exception as e:
                 print(f"Error saving weekend: {e}")
 
@@ -841,6 +873,7 @@ def payroll(request):
                     if 'createdAt' in update_data:
                         del update_data['createdAt']
                     db.collection('hrm_advances').document(doc_id).update(update_data)
+                    messages.success(request, "Advance salary request updated successfully.")
                 else:
                     db.collection('hrm_advances').add({
                     'employee': request.POST.get('employee'),
@@ -850,6 +883,7 @@ def payroll(request):
                     'status': 'Pending',
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                    messages.success(request, "Advance salary request filed successfully.")
             except Exception as e:
                 print(f"Error adding advance salary: {e}")
 
@@ -858,6 +892,7 @@ def payroll(request):
             if doc_id:
                 try:
                     db.collection('hrm_advances').document(doc_id).delete()
+                    messages.success(request, "Advance salary request deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting advance: {e}")
 
@@ -923,9 +958,11 @@ def payroll(request):
                 }
                 if doc_id:
                     db.collection('hrm_payrolls').document(doc_id).update(payload)
+                    messages.success(request, "Payroll sheet updated/recalculated successfully.")
                 else:
                     payload['createdAt'] = firestore.SERVER_TIMESTAMP
                     db.collection('hrm_payrolls').add(payload)
+                    messages.success(request, "Payroll sheet generated successfully.")
             except Exception as e:
                 print(f"Error generating payroll: {e}")
 
@@ -934,6 +971,7 @@ def payroll(request):
             if doc_id:
                 try:
                     db.collection('hrm_payrolls').document(doc_id).delete()
+                    messages.success(request, "Payroll sheet deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting payroll: {e}")
 
@@ -973,6 +1011,7 @@ def payroll(request):
                             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         }
                         db.collection('journal_entries').add(je_data)
+                        messages.success(request, "Payroll disbursed and journal entries posted successfully.")
                 except Exception as e:
                     print(f"Error disbursing payroll: {e}")
 
@@ -1211,6 +1250,7 @@ def onboarding_offboarding(request):
                     'status': 'Pending',
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                messages.success(request, "Onboarding task added successfully.")
             except Exception as e:
                 print(f"Error adding onboarding task: {e}")
 
@@ -1218,6 +1258,7 @@ def onboarding_offboarding(request):
             if doc_id:
                 try:
                     db.collection('hrm_onboarding_tasks').document(doc_id).update({'status': 'Completed'})
+                    messages.success(request, "Onboarding task marked as completed.")
                 except Exception as e:
                     print(f"Error completing onboarding task: {e}")
 
@@ -1225,6 +1266,7 @@ def onboarding_offboarding(request):
             if doc_id:
                 try:
                     db.collection('hrm_onboarding_tasks').document(doc_id).delete()
+                    messages.success(request, "Onboarding task deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting onboarding task: {e}")
 
@@ -1244,6 +1286,7 @@ def onboarding_offboarding(request):
                 emp_query = list(db.collection('employees').where('name', '==', emp_name).stream())
                 if emp_query:
                     emp_query[0].reference.update({'status': 'Resigned'})
+                messages.success(request, "Exit clearance workflow triggered successfully.")
             except Exception as e:
                 print(f"Error triggering exit: {e}")
 
@@ -1261,6 +1304,7 @@ def onboarding_offboarding(request):
                         emp_query = list(db.collection('employees').where('name', '==', emp_name).stream())
                         if emp_query:
                             emp_query[0].reference.update({'status': 'Inactive'})
+                    messages.success(request, "Exit clearance status updated successfully.")
                 except Exception as e:
                     print(f"Error updating clearance: {e}")
 
@@ -1297,6 +1341,7 @@ def roster_management(request):
                     'end_date': request.POST.get('end_date'),
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                messages.success(request, "Employee shift roster assigned successfully.")
             except Exception as e:
                 print(f"Error assigning shift: {e}")
 
@@ -1304,6 +1349,7 @@ def roster_management(request):
             if doc_id:
                 try:
                     db.collection('hrm_employee_shifts').document(doc_id).delete()
+                    messages.success(request, "Shift assignment deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting shift: {e}")
 
@@ -1339,6 +1385,7 @@ def expense_claims(request):
                     'status': 'Pending',
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                messages.success(request, "Expense claim filed successfully.")
             except Exception as e:
                 print(f"Error filing expense claim: {e}")
 
@@ -1346,6 +1393,7 @@ def expense_claims(request):
             if doc_id:
                 try:
                     db.collection('hrm_expense_claims').document(doc_id).update({'status': 'Approved'})
+                    messages.success(request, "Expense claim approved successfully.")
                 except Exception as e:
                     print(f"Error approving claim: {e}")
 
@@ -1353,6 +1401,7 @@ def expense_claims(request):
             if doc_id:
                 try:
                     db.collection('hrm_expense_claims').document(doc_id).update({'status': 'Rejected'})
+                    messages.success(request, "Expense claim rejected.")
                 except Exception as e:
                     print(f"Error rejecting claim: {e}")
 
@@ -1360,6 +1409,7 @@ def expense_claims(request):
             if doc_id:
                 try:
                     db.collection('hrm_expense_claims').document(doc_id).delete()
+                    messages.success(request, "Expense claim deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting claim: {e}")
 
@@ -1394,6 +1444,7 @@ def document_asset_vault(request):
                     'expiry_date': request.POST.get('expiry_date'),
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                messages.success(request, "Employee document added to vault successfully.")
             except Exception as e:
                 print(f"Error adding document: {e}")
 
@@ -1401,6 +1452,7 @@ def document_asset_vault(request):
             if doc_id:
                 try:
                     db.collection('hrm_documents').document(doc_id).delete()
+                    messages.success(request, "Employee document deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting document: {e}")
 
@@ -1414,6 +1466,7 @@ def document_asset_vault(request):
                     'status': 'Assigned',
                     'createdAt': firestore.SERVER_TIMESTAMP
                 })
+                messages.success(request, "Asset assigned to employee successfully.")
             except Exception as e:
                 print(f"Error assigning asset: {e}")
 
@@ -1421,6 +1474,7 @@ def document_asset_vault(request):
             if doc_id:
                 try:
                     db.collection('hrm_assets').document(doc_id).update({'status': 'Returned'})
+                    messages.success(request, "Asset marked as returned successfully.")
                 except Exception as e:
                     print(f"Error returning asset: {e}")
 
@@ -1428,6 +1482,7 @@ def document_asset_vault(request):
             if doc_id:
                 try:
                     db.collection('hrm_assets').document(doc_id).delete()
+                    messages.success(request, "Asset record deleted successfully.")
                 except Exception as e:
                     print(f"Error deleting asset: {e}")
 

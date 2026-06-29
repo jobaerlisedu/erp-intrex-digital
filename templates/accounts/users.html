@@ -92,17 +92,6 @@
     </a>
 </div>
 
-{% if messages %}
-<div class="messages-list">
-    {% for message in messages %}
-    <div class="msg {{ message.tags }}">
-        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
-        {{ message }}
-        <button class="alert-close-btn" onclick="this.parentElement.style.display='none';"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
 
 <!-- Stats -->
 {% with total=user_data|length %}

@@ -187,6 +187,7 @@ def kanban_board(request):
         elif action == 'change_status' and doc_id:
             new_status = request.POST.get('status')
             db.collection('project_tasks').document(doc_id).update({'status': new_status})
+            messages.success(request, "Task status updated.")
             return redirect('solutions:kanban_board')
 
         elif action == 'delete_task' and doc_id:
