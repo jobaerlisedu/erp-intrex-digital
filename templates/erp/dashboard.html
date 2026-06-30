@@ -79,7 +79,7 @@
         </div>
         <div>
             <div style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Invoiced Amount</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);">${{ aggregate.total_invoiced|floatformat:2 }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);">BDT {{ aggregate.total_invoiced|floatformat:2 }}</div>
         </div>
     </div>
 </div>
@@ -193,7 +193,7 @@
                 </div>
                 <div>
                     <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">Stock Valuation</span>
-                    <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">${{ inventory.total_value|floatformat:2 }}</span>
+                    <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">BDT {{ inventory.total_value|floatformat:2 }}</span>
                 </div>
             </div>
         </div>
@@ -232,7 +232,7 @@
             <div style="display: flex; gap: 20px; border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin-top: 8px;">
                 <div>
                     <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">Total Invested</span>
-                    <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">${{ investment.total_invested|floatformat:2 }}</span>
+                    <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">BDT {{ investment.total_invested|floatformat:2 }}</span>
                 </div>
                 <div>
                     <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">Overall ROI</span>
@@ -275,11 +275,11 @@
             <div style="display: flex; gap: 20px; border-top: 1px solid var(--sidebar-border); padding-top: 16px; margin-top: 8px;">
                 <div>
                     <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">Paid Collected</span>
-                    <span style="font-size: 1.1rem; font-weight: 600; color: #10b981;">${{ billing.paid_amount|floatformat:2 }}</span>
+                    <span style="font-size: 1.1rem; font-weight: 600; color: #10b981;">BDT {{ billing.paid_amount|floatformat:2 }}</span>
                 </div>
                 <div>
                     <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">Outstanding</span>
-                    <span style="font-size: 1.1rem; font-weight: 600; color: #ef4444;">${{ billing.pending_amount|floatformat:2 }}</span>
+                    <span style="font-size: 1.1rem; font-weight: 600; color: #ef4444;">BDT {{ billing.pending_amount|floatformat:2 }}</span>
                 </div>
             </div>
         </div>

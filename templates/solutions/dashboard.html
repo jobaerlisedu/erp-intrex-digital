@@ -67,12 +67,12 @@
     </div>
     <div class="kpi-card purple">
         <div class="kpi-label">Total Scoped Budget</div>
-        <div class="kpi-value">${{ total_budget|floatformat:2 }}</div>
+        <div class="kpi-value">BDT {{ total_budget|floatformat:2 }}</div>
         <div style="font-size: 0.8rem; color: var(--text-secondary);">All contract revenues</div>
     </div>
     <div class="kpi-card red">
         <div class="kpi-label">Actual Project Spends</div>
-        <div class="kpi-value">${{ actual_spend|floatformat:2 }}</div>
+        <div class="kpi-value">BDT {{ actual_spend|floatformat:2 }}</div>
         <div style="font-size: 0.8rem; color: var(--text-secondary);">Procured materials costs</div>
     </div>
 </div>
